@@ -9,6 +9,7 @@ add_executable(dosbox_tests
     cmd_move_tests.cpp
     dos_files_tests.cpp
     dos_memory_struct_tests.cpp
+    dos_psp_environment_tests.cpp
     dosbox_pause_fsm_tests.cpp
     dosbox_test_fixture.h
     drives_tests.cpp
@@ -23,6 +24,8 @@ add_executable(dosbox_tests
     mixer_tests.cpp
     mount_tests.cpp
     port_containers_tests.cpp
+    program_append_tests.cpp
+    program_join_tests.cpp
     program_mixer_tests.cpp
     rect_tests.cpp
     rgb_tests.cpp
