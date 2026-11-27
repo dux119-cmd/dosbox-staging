@@ -17,10 +17,11 @@ build_dwarfs() {
   local opt_flags="-Os -DNDEBUG -ffunction-sections -fdata-sections"
   local msvc_args=()
   if [[ $IS_WINDOWS == 1 ]]; then
-    # FLAC__NO_DLL: FLAC is linked statically. Passing CMAKE_CXX_FLAGS replaces CMake's MSVC defaults
-    # (which include /EHsc), so -EHsc is set here explicitly.
-    msvc_args=(${MSVC_RUNTIME[@]+"${MSVC_RUNTIME[@]}"} -DCMAKE_C_FLAGS=-DFLAC__NO_DLL
-               -DCMAKE_CXX_FLAGS="-EHsc -DFLAC__NO_DLL")
+    # FLAC__NO_DLL: FLAC is linked statically. LIBARCHIVE_STATIC: libarchive is a static library, so its symbols are
+    # not dllimport (without this, the extractor's references to archive_* are unresolved at link time). Passing
+    # CMAKE_CXX_FLAGS replaces CMake's MSVC defaults (which include /EHsc), so -EHsc is set here explicitly.
+    msvc_args=(${MSVC_RUNTIME[@]+"${MSVC_RUNTIME[@]}"} -DCMAKE_C_FLAGS="-DFLAC__NO_DLL -DLIBARCHIVE_STATIC"
+               -DCMAKE_CXX_FLAGS="-EHsc -DFLAC__NO_DLL -DLIBARCHIVE_STATIC")
     opt_flags=""  # MSVC: MinSizeRel selects size optimization; no GCC flags
   fi
   # dwarfs keeps its own flags (no hidden visibility), as it always has.
