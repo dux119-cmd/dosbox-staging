@@ -21,6 +21,7 @@
 #include "misc/std_filesystem.h"
 #include "utils/fs_utils.h"
 #include "utils/string_utils.h"
+#include "rwzfs/rwz.h"
 
 #define OVERLAY_DIR 1
 bool logoverlay = false;
@@ -634,7 +635,7 @@ bool Overlay_Drive::Sync_leading_dirs(const char* dos_filename){
 		safe_strcat(dirnamebase, dirname);
 		CROSS_FILENAME(dirnamebase);
 		struct stat basetest;
-		if (stat(dirCache.GetExpandNameAndNormaliseCase(dirnamebase),
+		if (rwz::posix::stat(dirCache.GetExpandNameAndNormaliseCase(dirnamebase),
 		         &basetest) == 0 &&
 		    basetest.st_mode & S_IFDIR) {
 			if (logoverlay) LOG_MSG("base exists: %s",dirnamebase);
@@ -646,7 +647,7 @@ bool Overlay_Drive::Sync_leading_dirs(const char* dos_filename){
 			safe_strcpy(dirnameoverlay, overlaydir);
 			safe_strcat(dirnameoverlay, dirname);
 			CROSS_FILENAME(dirnameoverlay);
-			if (stat(dirnameoverlay,&overlaytest) == 0 ) {
+			if (rwz::posix::stat(dirnameoverlay,&overlaytest) == 0 ) {
 				//item exist. Check if it is a folder, if not a folder =>fail!
 				if ((overlaytest.st_mode & S_IFDIR) ==0) return false;
 			} else {
@@ -921,7 +922,7 @@ again:
 #endif
 
 	safe_strcat(ovname, prel);
-	bool statok = ( stat(ovname,&stat_block)==0);
+	bool statok = ( rwz::posix::stat(ovname,&stat_block)==0);
 
 	if (logoverlay) LOG_MSG("listing %s",dir_entcopy);
 	if (statok) {
@@ -934,7 +935,7 @@ again:
 			if (logoverlay) LOG_MSG("skipping deleted file %s %s %s",preldos,full_name,ovname);
 			goto again;
 		}
-		if (stat(dirCache.GetExpandNameAndNormaliseCase(full_name),
+		if (rwz::posix::stat(dirCache.GetExpandNameAndNormaliseCase(full_name),
 		         &stat_block) != 0) {
 			if (logoverlay) {
 				LOG_MSG("stat failed for %s . This should not happen.",
@@ -1002,7 +1003,7 @@ bool Overlay_Drive::FileUnlink(const char * name) {
 	if (!delete_native_file(overlayname)) {
 		//Unlink failed for some reason try finding it.
 		struct stat buffer;
-		if(stat(overlayname,&buffer)) {
+		if(rwz::posix::stat(overlayname,&buffer)) {
 			//file not found in overlay, check the basedrive
 			//Check if file not already deleted 
 			if (is_deleted_file(name)) {
@@ -1012,7 +1013,7 @@ bool Overlay_Drive::FileUnlink(const char * name) {
 
 			char* fullname = dirCache.GetExpandNameAndNormaliseCase(
 			        basename);
-			if (stat(fullname,&buffer)) {
+			if (rwz::posix::stat(fullname,&buffer)) {
 				DOS_SetError(DOSERR_FILE_NOT_FOUND);
 				return false; // File not found in either, return file false.
 			}
@@ -1105,18 +1106,18 @@ void Overlay_Drive::add_special_file_to_disk(const char* dosname, const char* op
 	safe_strcpy(overlayname, overlaydir);
 	safe_strcat(overlayname, name.c_str());
 	CROSS_FILENAME(overlayname);
-	FILE* f = fopen(overlayname,"wb+");
+	FILE* f = rwz::stdio::fopen(overlayname,"wb+");
 	if (!f) {
 		Sync_leading_dirs(dosname);
-		f = fopen(overlayname,"wb+");
+		f = rwz::stdio::fopen(overlayname,"wb+");
 	}
 	if (!f) {
 		LOG_ERR("DOS: Failed to create overlay file '%s'", overlayname);
 		return;
 	}
 	char buf[5] = {'e','m','p','t','y'};
-	fwrite(buf,5,1,f);
-	fclose(f);
+	rwz::stdio::fwrite(buf,5,1,f);
+	rwz::stdio::fclose(f);
 }
 
 void Overlay_Drive::remove_special_file_from_disk(const char* dosname, const char* operation) {
@@ -1240,7 +1241,7 @@ bool Overlay_Drive::FileExists(const char* name) {
 	safe_strcat(overlayname, name);
 	CROSS_FILENAME(overlayname);
 	struct stat temp_stat;
-	if(stat(overlayname,&temp_stat)==0 && (temp_stat.st_mode & S_IFDIR)==0) return true;
+	if(rwz::posix::stat(overlayname,&temp_stat)==0 && (temp_stat.st_mode & S_IFDIR)==0) return true;
 	
 	if (is_deleted_file(name)) return false;
 

@@ -3,8 +3,6 @@
 
 #include "cdrom.h"
 
-#include <sys/types.h>
-#include <sys/stat.h>
 #include <unistd.h>
 
 #include "audio/channel_names.h"

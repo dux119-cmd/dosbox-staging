@@ -14,6 +14,7 @@
 #include "hardware/memory.h"
 #include "misc/support.h"
 #include "utils/math_utils.h"
+#include "rwzfs/rwz.h"
 
 static constexpr auto NumSampleFramesInBuffer = 16 * 1024;
 

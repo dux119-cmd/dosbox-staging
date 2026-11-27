@@ -6,7 +6,6 @@
 #include <cctype>
 #include <cstdlib>
 #include <cstring>
-#include <fstream>
 #include <sstream>
 #include <utility>
 
@@ -16,6 +15,7 @@
 #include "softmodem.h"
 #include "utils/math_utils.h"
 #include "misc_util.h"
+#include "rwzfs/rwz.h"
 
 class PhonebookEntry {
 public:
@@ -52,7 +52,7 @@ static bool MODEM_IsPhoneValid(const std::string &input) {
 }
 
 bool MODEM_ReadPhonebook(const std_fs::path &path) {
-	std::ifstream loadfile(path);
+	rwz::stdio::file_istream loadfile(path);
 	if (!loadfile)
 		return false;
 

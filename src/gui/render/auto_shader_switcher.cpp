@@ -5,7 +5,6 @@
 
 #include <algorithm>
 #include <cassert>
-#include <fstream>
 
 #include <SDL3/SDL.h>
 

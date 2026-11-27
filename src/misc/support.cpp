@@ -13,7 +13,6 @@
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
-#include <fstream>
 #include <functional>
 #include <iterator>
 #include <random>
@@ -27,6 +26,7 @@
 #include "utils/string_utils.h"
 
 #include "whereami.h"
+#include "rwzfs/rwz.h"
 
 char int_to_char(int val)
 {
@@ -196,7 +196,7 @@ void set_thread_name([[maybe_unused]] std::thread& thread,
 void FILE_closer::operator()(FILE* f) noexcept
 {
 	if (f) {
-		fclose(f);
+		rwz::stdio::fclose(f);
 	}
 }
 
@@ -204,11 +204,11 @@ FILE* open_file(const char* filename, const char* mode)
 {
 #if defined(_WIN32) && defined(__STDC_WANT_SECURE_LIB__)
 	FILE* f;
-	if (0 == fopen_s(&f, filename, mode)) {
+	if (0 == rwz::stdio::fopen_s(&f, filename, mode)) {
 		return f;
 	}
 #else
-	return fopen(filename, mode);
+	return rwz::stdio::fopen(filename, mode);
 #endif
 	return nullptr;
 }
@@ -276,7 +276,7 @@ const std_fs::path& get_executable_path()
 static void maybe_add_path(const std_fs::path& path, std::vector<std_fs::path>& paths)
 {
 	std::error_code ec = {};
-	if (!std_fs::is_directory(path, ec)) {
+	if (!rwz::fs::is_directory(path, ec)) {
 		return;
 	}
 
@@ -284,7 +284,7 @@ static void maybe_add_path(const std_fs::path& path, std::vector<std_fs::path>& 
 	// and then checking if it already exists in the paths vector.
 	// Ex: /usr/share/dosbox-staging and get_executable_path() /../share can
 	// point to the same location
-	const auto canonical_path = std_fs::canonical(path, ec);
+	const auto canonical_path = rwz::fs::canonical(path, ec);
 
 	if (ec) {
 		LOG_ERR("RESOURCE: Failed to canonicalize path '%s': %s",
@@ -412,14 +412,14 @@ std_fs::path get_resource_path(const std_fs::path& name)
 	std::error_code ec;
 
 	// Handle an absolute path
-	if (std_fs::exists(name, ec)) {
+	if (rwz::fs::exists(name, ec)) {
 		return name;
 	}
 
 	// Try the resource paths
 	for (const auto& parent : get_resource_parent_paths()) {
 		const auto resource = parent / name;
-		if (std_fs::exists(resource, ec)) {
+		if (rwz::fs::exists(resource, ec)) {
 			return resource;
 		}
 	}
@@ -440,7 +440,7 @@ std::vector<std_fs::path> get_directory_entries(
 
 	// Check if the directory exists
 	std::error_code ec = {};
-	if (!std_fs::is_directory(dir, ec)) {
+	if (!rwz::fs::is_directory(dir, ec)) {
 		return files;
 	}
 
@@ -513,7 +513,7 @@ std::vector<uint8_t> load_resource_blob(const std_fs::path& name,
 {
 	const auto resource_path = get_resource_path(name);
 
-	std::ifstream file(resource_path, std::ios::binary);
+	rwz::stdio::file_istream file(resource_path, std::ios::binary);
 
 	if (!file.is_open()) {
 		if (importance == ResourceImportance::Optional) {
@@ -553,7 +553,7 @@ bool path_exists(const std_fs::path& path)
 {
 	// avoid exceptions
 	std::error_code ec;
-	return std_fs::exists(path, ec);
+	return rwz::fs::exists(path, ec);
 }
 
 bool is_writable(const std_fs::path& p)

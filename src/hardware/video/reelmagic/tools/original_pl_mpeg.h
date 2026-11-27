@@ -795,6 +795,7 @@ plm_samples_t *plm_audio_decode(plm_audio_t *self);
 
 #include <string.h>
 #include <stdlib.h>
+#include "rwzfs/rwz.h"
 
 #ifndef TRUE
 #define TRUE 1

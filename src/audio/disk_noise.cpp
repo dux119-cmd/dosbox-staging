@@ -7,7 +7,6 @@
 #include <array>
 #include <cmath>
 #include <cstring>
-#include <fstream>
 #include <memory>
 #include <mutex>
 #include <string>
@@ -19,6 +18,7 @@
 #include "hardware/timer.h"
 #include "mixer.h"
 #include "utils/checks.h"
+#include "rwzfs/rwz.h"
 
 CHECK_NARROWING();
 
@@ -187,12 +187,12 @@ void DiskNoiseDevice::LoadSample(const std::string& path,
 	                                                path + SampleExtension)};
 
 	for (const auto& candidate : candidate_paths) {
-		if (!std_fs::exists(candidate)) {
+		if (!rwz::fs::exists(candidate)) {
 			continue;
 		}
 
 		// Load entire file into memory
-		std::ifstream file(candidate, std::ios::binary | std::ios::ate);
+		rwz::stdio::file_istream file(candidate, std::ios::binary | std::ios::ate);
 		if (!file) {
 			LOG_ERR("DISKNOISE: Failed to open file '%s'",
 			        candidate.string().c_str());

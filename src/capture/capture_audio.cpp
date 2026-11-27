@@ -11,6 +11,7 @@
 #include "gui/titlebar.h"
 #include "hardware/memory.h"
 #include "misc/video.h"
+#include "rwzfs/rwz.h"
 
 static constexpr auto SampleFrameSize   = 4;
 static constexpr auto NumFramesInBuffer = 16 * 1024;

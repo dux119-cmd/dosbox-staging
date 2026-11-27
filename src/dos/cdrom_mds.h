@@ -9,6 +9,7 @@
 #include <stdint.h>
 
 #include "utils/byteorder.h"
+#include "rwzfs/rwz.h"
 
 // All the structs in this header must be tighly packed.
 // They are directly read in from a file.
@@ -34,7 +35,7 @@ struct MdsHeader
 };
 static_assert(sizeof(MdsHeader) == 88);
 
-inline std::optional<MdsHeader> read_mds_header(std::ifstream &stream)
+inline std::optional<MdsHeader> read_mds_header(rwz::stdio::file_istream &stream)
 {
 	stream.seekg(0);
 	if (stream.fail()) {
@@ -63,7 +64,7 @@ struct MdsSessionBlock
 };
 static_assert(sizeof(MdsSessionBlock) == 24);
 
-inline std::optional<MdsSessionBlock> read_mds_session_block(std::ifstream &stream, const std::ifstream::pos_type pos)
+inline std::optional<MdsSessionBlock> read_mds_session_block(rwz::stdio::file_istream &stream, const rwz::stdio::file_istream::pos_type pos)
 {
 	stream.seekg(pos);
 	if (stream.fail()) {
@@ -109,7 +110,7 @@ struct MdsTrackBlock
 };
 static_assert(sizeof(MdsTrackBlock) == 80);
 
-inline std::optional<MdsTrackBlock> read_mds_track_block(std::ifstream &stream, const std::ifstream::pos_type pos)
+inline std::optional<MdsTrackBlock> read_mds_track_block(rwz::stdio::file_istream &stream, const rwz::stdio::file_istream::pos_type pos)
 {
 	stream.seekg(pos);
 	if (stream.fail()) {
@@ -131,7 +132,7 @@ struct MdsExtraBlock
 };
 static_assert(sizeof(MdsExtraBlock) == 8);
 
-inline std::optional<MdsExtraBlock> read_mds_extra_block(std::ifstream &stream, const std::ifstream::pos_type pos)
+inline std::optional<MdsExtraBlock> read_mds_extra_block(rwz::stdio::file_istream &stream, const rwz::stdio::file_istream::pos_type pos)
 {
 	stream.seekg(pos);
 	if (stream.fail()) {
@@ -155,7 +156,7 @@ struct MdsFooter
 };
 static_assert(sizeof(MdsFooter) == 16);
 
-inline std::optional<MdsFooter> read_mds_footer(std::ifstream &stream, const std::ifstream::pos_type pos)
+inline std::optional<MdsFooter> read_mds_footer(rwz::stdio::file_istream &stream, const rwz::stdio::file_istream::pos_type pos)
 {
 	stream.seekg(pos);
 	if (stream.fail()) {

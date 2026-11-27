@@ -26,6 +26,7 @@
 #include "utils/string_utils.h"
 
 #include "riffcpp/riffcpp.hpp"
+#include "rwzfs/rwz.h"
 
 constexpr auto SoundFontExtension = ".sf2";
 

@@ -33,6 +33,7 @@
 
 #define __SDL_SOUND_INTERNAL__
 #include "SDL_sound_internal.h"
+#include "../rwzfs/integrations/sdl/rwz_sdl_io.h"
 
 typedef struct
 {
@@ -525,7 +526,7 @@ Sound_Sample *Sound_NewSampleFromFile(const char *filename,
 
     SNDDBG(("Sound_NewSampleFromFile ext = `%s`", ext));
 
-    rw = SDL_IOFromFile(filename, "rb");
+    rw = rwz_SDL_IOFromFile(filename, "rb");
     /* !!! FIXME: rw = RWops_FromFile(filename, "rb");*/
     BAIL_IF_MACRO(rw == NULL, SDL_GetError(), NULL);
 

@@ -8,6 +8,7 @@
 
 #include "dos/dos.h"
 #include "dos/dos_system.h"
+#include "rwzfs/rwz.h"
 
 std::string to_native_path(const std::string &path) noexcept
 {
@@ -22,7 +23,7 @@ uint16_t local_drive_create_dir(const char* path)
 	if (!windows_utf8_to_utf16(path, utf16_path)) {
 		return DOSERR_ACCESS_DENIED;
 	}
-	if (CreateDirectoryW(utf16_path, nullptr)) {
+	if (rwz::win32::create_directory(utf16_path, nullptr)) {
 		return DOSERR_NONE;
 	}
 	return DOSERR_ACCESS_DENIED;
@@ -79,7 +80,7 @@ NativeFileHandle open_native_file(const char* path, const bool write_access)
 	// FILE_FLAG_BACKUP_SEMANTICS is required to open a handle to a
 	// directory (e.g. so FindNext() can query directory timestamps via
 	// get_dos_file_time()); it has no effect when opening regular files.
-	return CreateFileW(utf16_path,
+	return rwz::win32::create_file(utf16_path,
 	                   access,
 	                   FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE,
 	                   nullptr,
@@ -99,7 +100,7 @@ NativeFileHandle create_native_file(const char* path,
 	                                    ? static_cast<DWORD>(attributes->_data)
 	                                    : FILE_ATTRIBUTE_NORMAL;
 
-	return CreateFileW(utf16_path,
+	return rwz::win32::create_file(utf16_path,
 	                   GENERIC_READ | GENERIC_WRITE,
 	                   FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE,
 	                   nullptr,
@@ -125,7 +126,7 @@ NativeIoResult read_native_file(const NativeFileHandle handle, uint8_t* buffer,
 			clamped_bytes_requested = max_dword;
 		}
 		DWORD num_bytes_read = 0;
-		const auto success   = ReadFile(handle,
+		const auto success   = rwz::win32::read_file(handle,
                                               buffer + ret.num_bytes,
                                               clamped_bytes_requested,
                                               &num_bytes_read,
@@ -187,7 +188,7 @@ int64_t seek_native_file(const NativeFileHandle handle, const int64_t offset,
 	li.QuadPart = offset;
 
 	// HighPart is both an input and output value
-	li.LowPart = SetFilePointer(handle, li.LowPart, &li.HighPart, win32_seek_type);
+	li.LowPart = rwz::win32::set_file_pointer(handle, li.LowPart, &li.HighPart, win32_seek_type);
 
 	// If we have a large offset, INVALID_SET_FILE_POINTER is also valid as
 	// the low word So we must also check GetLastError() to know if we failed
@@ -200,7 +201,7 @@ int64_t seek_native_file(const NativeFileHandle handle, const int64_t offset,
 
 void close_native_file(const NativeFileHandle handle)
 {
-	CloseHandle(handle);
+	rwz::win32::close_handle(handle);
 }
 
 // Sets the file size to be equal to the current file position

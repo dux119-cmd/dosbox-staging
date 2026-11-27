@@ -11,6 +11,7 @@
 #include "utils/string_utils.h"
 
 #include <SDL3/SDL.h>
+#include "rwzfs/rwz.h"
 
 CHECK_NARROWING();
 
@@ -30,7 +31,7 @@ void MANUAL::Run(void)
 	        format_str("docs/%s/manual/introduction/about-this-manual.html",
 	                   DOSBOX_VERSION_SHORT));
 
-	if (std::filesystem::exists(path)) {
+	if (rwz::fs::exists(path)) {
 		const auto url = std::string{"file://"} + path.string();
 		SDL_OpenURL(url.c_str());
 

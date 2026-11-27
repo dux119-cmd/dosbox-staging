@@ -570,6 +570,7 @@ using socket_t = int;
 
 #ifdef CPPHTTPLIB_ZSTD_SUPPORT
 #include <zstd.h>
+#include "rwzfs/rwz.h"
 #endif
 
 /*

@@ -142,6 +142,7 @@
 
 #include <algorithm>
 #include <cassert>
+#include "rwzfs/rwz.h"
 
 #define MAX_OUTPUT 0x7fff
 //When you go over this create sample

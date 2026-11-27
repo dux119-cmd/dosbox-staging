@@ -7,7 +7,6 @@
 #include "hardware/network/ipx.h"
 
 #include <cinttypes>
-#include <cstdio>
 #include <cstring>
 #include <ctime>
 #include <memory>

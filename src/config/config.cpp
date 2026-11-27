@@ -7,7 +7,6 @@
 #include <algorithm>
 #include <climits>
 #include <cstdlib>
-#include <fstream>
 #include <limits>
 #include <optional>
 #include <regex>
@@ -23,6 +22,7 @@
 #include "misc/support.h"
 #include "utils/fs_utils.h"
 #include "utils/string_utils.h"
+#include "rwzfs/rwz.h"
 
 // Set by parseconfigfile so PropPath can use it to construct the realpath
 std_fs::path current_config_dir;
@@ -68,7 +68,7 @@ static void write_section(SectionProp& sec, FILE* outfile)
 
 bool Config::WriteConfig(const std_fs::path& path) const
 {
-	FILE* outfile = fopen(path.string().c_str(), "w+t");
+	FILE* outfile = rwz::stdio::fopen(path.string().c_str(), "w+t");
 	if (!outfile) {
 		return false;
 	}
@@ -105,7 +105,7 @@ bool Config::WriteConfig(const std_fs::path& path) const
 		fprintf(outfile, "\n");
 	}
 
-	fclose(outfile);
+	rwz::stdio::fclose(outfile);
 	return true;
 }
 
@@ -218,7 +218,7 @@ bool Config::ParseConfigFile(const std::string& type,
 {
 	std::error_code ec;
 	const std_fs::path cfg_path = config_file_name;
-	const auto canonical_path   = std_fs::canonical(cfg_path, ec);
+	const auto canonical_path   = rwz::fs::canonical(cfg_path, ec);
 
 	if (ec) {
 		return false;
@@ -230,7 +230,7 @@ bool Config::ParseConfigFile(const std::string& type,
 		return true;
 	}
 
-	std::ifstream input_stream(canonical_path);
+	rwz::stdio::file_istream input_stream(canonical_path);
 	if (!input_stream) {
 		return false;
 	}

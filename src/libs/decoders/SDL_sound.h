@@ -36,6 +36,7 @@
 // must be included after dosbox_config.h
 #include <SDL3/SDL.h>
 #include <SDL3/SDL_endian.h>
+#include "../rwzfs/integrations/sdl/rwz_sdl_io.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -429,7 +430,7 @@ SNDDECLSPEC Sound_Sample * SDLCALL Sound_NewSample(SDL_IOStream *rw,
  *  (filename).
  *
  * This can pool RWops structures, so it may fragment the heap less over time
- *  than using SDL_IOFromFile().
+ *  than using rwz_SDL_IOFromFile().
  *
  *    \param filename file containing sound data.
  *    \param desired Format to convert sound data into. Can usually be NULL,

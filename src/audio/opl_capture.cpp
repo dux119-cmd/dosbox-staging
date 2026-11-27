@@ -8,6 +8,7 @@
 #include "capture/capture.h"
 #include "utils/byteorder.h"
 #include "utils/checks.h"
+#include "rwzfs/rwz.h"
 
 CHECK_NARROWING();
 

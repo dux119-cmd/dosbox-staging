@@ -30,6 +30,7 @@
 #include "utils/string_utils.h"
 
 #include "IBM_VGA_8x16.h"
+#include "rwzfs/rwz.h"
 
 struct _LogGroup {
 	const char* front = nullptr;

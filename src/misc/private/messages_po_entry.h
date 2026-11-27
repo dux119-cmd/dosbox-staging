@@ -6,6 +6,7 @@
 #include <fstream>
 #include <string>
 #include <vector>
+#include "rwzfs/rwz.h"
 
 
 class PoEntry {
@@ -103,7 +104,7 @@ private:
 	int line_counter    = 0;
 	int entry_counter   = 0;
 
-	std::ifstream in_file = {};
+	rwz::stdio::file_istream in_file = {};
 
 	// Used for logging only
 	const std::string file_name = {};
@@ -136,5 +137,5 @@ private:
 
 	void WriteMultiLineString(std::string& value);
 
-	std::ofstream out_file = {};
+	rwz::stdio::file_ostream out_file = {};
 };

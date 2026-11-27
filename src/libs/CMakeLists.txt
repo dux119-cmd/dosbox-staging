@@ -15,6 +15,14 @@ function(disable_warnings target)
   )
 endfunction()
 
+set(RWZFS_BUILD_TESTS OFF CACHE BOOL "" FORCE)
+set(RWZFS_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
+
+# The first configure of a scripts build builds the dependencies: needs bash, git, curl and a C++23
+# compiler, and takes a long time. Later configures reuse build-deps/.
+# --- end rwzfs ---
+
+
 add_subdirectory(base64)
 add_subdirectory(clap)
 add_subdirectory(cqm)
@@ -36,6 +44,7 @@ endif()
 add_subdirectory(PL_MPEG)
 add_subdirectory(residfp)
 add_subdirectory(riffcpp)
+add_subdirectory(rwzfs)
 add_subdirectory(simde)
 add_subdirectory(simpleini)
 add_subdirectory(tal-chorus)

@@ -15,3 +15,6 @@ target_sources(dosboxcommon PRIVATE
   int10_video_state.cpp
   int10_vptable.cpp
   xms.cpp)
+
+target_link_libraries(dosboxcommon PRIVATE rwzfs)
+target_link_libraries(dosboxcommon INTERFACE rwzfs)

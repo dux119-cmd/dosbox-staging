@@ -22,6 +22,7 @@
 #include "utils/rwqueue.h"
 
 #include "decoders/SDL_sound.h"
+#include "rwzfs/rwz.h"
 
 // CDROM data and audio format constants
 #define BYTES_PER_RAW_REDBOOK_FRAME    2352u
@@ -239,7 +240,7 @@ private:
 		}
 
 	private:
-		std::ifstream* file;
+		rwz::stdio::file_istream* file;
 	};
 
 	class AudioFile final : public TrackFile {
@@ -437,6 +438,7 @@ private:
 #elif defined(WIN32)
 
 #include <windows.h>
+#include "rwzfs/rwz.h"
 
 class CDROM_Interface_Win32 : public CDROM_Interface_Physical {
 public:

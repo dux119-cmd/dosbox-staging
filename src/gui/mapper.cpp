@@ -33,6 +33,7 @@
 #include "utils/math_utils.h"
 #include "utils/rgb888.h"
 #include "utils/string_utils.h"
+#include "rwzfs/rwz.h"
 
 //  Status Colors
 //  ~~~~~~~~~~~~~
@@ -2580,7 +2581,7 @@ void MAPPER_AddHandler(MAPPER_Handler *handler,
 
 static void MAPPER_SaveBinds() {
 	const char *filename = mapper.filename.c_str();
-	FILE * savefile=fopen(filename,"wt+");
+	FILE * savefile=rwz::stdio::fopen(filename,"wt+");
 	if (!savefile) {
 		LOG_MSG("MAPPER: Can't open %s for saving the key bindings", filename);
 		return;
@@ -2594,7 +2595,7 @@ static void MAPPER_SaveBinds() {
 		}
 		fprintf(savefile,"\n");
 	}
-	fclose(savefile);
+	rwz::stdio::fclose(savefile);
 	change_action_text("Mapping updated.", color_white);
 	if (!suppress_save_mapper_file_message) {
 		suppress_save_mapper_file_message = true;

@@ -9,6 +9,7 @@
 #include <devioctl.h>
 #include <ntddcdrm.h>
 #include <windows.h>
+#include "rwzfs/rwz.h"
 
 CHECK_NARROWING();
 

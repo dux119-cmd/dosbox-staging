@@ -10,7 +10,6 @@
 #include <clocale>
 #include <cstdlib>
 #include <string>
-#include <sys/types.h>
 #include <unistd.h>
 #include <vector>
 
@@ -38,6 +37,7 @@
 #include "utils/string_utils.h"
 #include "misc/support.h"
 #include "dos/drives.h"
+#include "rwzfs/rwz.h"
 
 std::string get_primary_config_name()
 {
@@ -110,7 +110,7 @@ static std_fs::path get_or_create_config_dir()
 	const auto conf_path = get_xdg_config_home() / "dosbox";
 	std::error_code ec   = {};
 
-	if (std_fs::exists(conf_path / get_primary_config_name())) {
+	if (rwz::fs::exists(conf_path / get_primary_config_name())) {
 		return conf_path;
 	}
 
@@ -123,8 +123,8 @@ static std_fs::path get_or_create_config_dir()
 		return old_conf_path;
 	};
 
-	if (!std_fs::exists(conf_path, ec)) {
-		if (std_fs::create_directories(conf_path, ec)) {
+	if (!rwz::fs::exists(conf_path, ec)) {
+		if (rwz::fs::create_directories(conf_path, ec)) {
 			return conf_path;
 		}
 		LOG_ERR("CONFIG: Path '%s' cannot be created (permission issue or broken symlink?)",
@@ -133,31 +133,31 @@ static std_fs::path get_or_create_config_dir()
 	}
 
 	// The conf path exists - but is it a directory, file, or symlink(s)?
-	assert(std_fs::exists(conf_path, ec));
+	assert(rwz::fs::exists(conf_path, ec));
 
-	if (std_fs::is_directory(conf_path, ec)) {
+	if (rwz::fs::is_directory(conf_path, ec)) {
 		return conf_path;
 	}
 
-	if (std_fs::is_regular_file(conf_path, ec)) {
+	if (rwz::fs::is_regular_file(conf_path, ec)) {
 		LOG_ERR("CONFIG: Path '%s' exists, but it's a file",
 		        conf_path.c_str());
 		return fallback_to_deprecated();
 	}
 
-	if (std_fs::is_symlink(conf_path, ec)) {
-		auto target_path = std_fs::read_symlink(conf_path, ec);
+	if (rwz::fs::is_symlink(conf_path, ec)) {
+		auto target_path = rwz::fs::read_symlink(conf_path, ec);
 
 		// If it's a symlink to a symlink, then keep reading them...
 		auto num_symlinks_read = 1;
 
 		// ...but bail out if they're circular links
-		while (std_fs::is_symlink(target_path, ec) &&
+		while (rwz::fs::is_symlink(target_path, ec) &&
 		       num_symlinks_read++ < 100) {
-			target_path = std_fs::read_symlink(target_path, ec);
+			target_path = rwz::fs::read_symlink(target_path, ec);
 		}
 		// If the last symlink points to a directory, then we'll take it
-		if (std_fs::is_directory(target_path, ec)) {
+		if (rwz::fs::is_directory(target_path, ec)) {
 			return target_path;
 		}
 		LOG_ERR("CONFIG: Path '%s' cannot be created because it's symlinked to '%s'",
@@ -182,7 +182,7 @@ void init_config_dir()
 		                                get_primary_config_name();
 
 		std::error_code ec = {};
-		if (std_fs::is_regular_file(portable_conf_path, ec)) {
+		if (rwz::fs::is_regular_file(portable_conf_path, ec)) {
 			const auto conf_dir = portable_conf_path.parent_path();
 
 			LOG_MSG("CONFIG: Using portable configuration layout in '%s'",
@@ -244,7 +244,7 @@ bool read_directory_first(DirInformation* dirp, char* entry_name, bool& is_direc
 		return false;
 	}
 
-	dirp->handle = FindFirstFileW(wide_path, &dirp->search_data);
+	dirp->handle = rwz::win32::find_first_file(wide_path, &dirp->search_data);
 	if (INVALID_HANDLE_VALUE == dirp->handle) {
 		return false;
 	}
@@ -291,7 +291,7 @@ void close_directory(DirInformation* dirp) {
 
 DirInformation* open_directory(const char* dirname) {
 	static DirInformation dir;
-	dir.dir=opendir(dirname);
+	dir.dir=rwz::posix::opendir(dirname);
 	safe_strcpy(dir.base_path, dirname);
 	return dir.dir?&dir:nullptr;
 }
@@ -303,7 +303,7 @@ bool read_directory_first(DirInformation* dirp, char* entry_name, bool& is_direc
 
 bool read_directory_next(DirInformation* dirp, char* entry_name, bool& is_directory) {
 	if (!dirp) return false;
-	struct dirent* dentry = readdir(dirp->dir);
+	struct dirent* dentry = rwz::posix::readdir(dirp->dir);
 	if (dentry==nullptr) {
 		return false;
 	}
@@ -337,14 +337,14 @@ bool read_directory_next(DirInformation* dirp, char* entry_name, bool& is_direct
 	safe_strcat(buffer, entry_name);
 	struct stat status;
 
-	if (stat(buffer,&status) == 0) is_directory = (S_ISDIR(status.st_mode)>0);
+	if (rwz::posix::stat(buffer,&status) == 0) is_directory = (S_ISDIR(status.st_mode)>0);
 	else is_directory = false;
 
 	return true;
 }
 
 void close_directory(DirInformation* dirp) {
-	if (dirp) closedir(dirp->dir);
+	if (dirp) rwz::posix::closedir(dirp->dir);
 }
 
 #endif
@@ -356,13 +356,13 @@ FILE *fopen_wrap_ro_fallback(const std::string &filename, bool &is_readonly)
 {
 	// Try with the requested permissions
 	const auto requested_perms = is_readonly ? "rb" : "rb+";
-	FILE *fp = fopen(filename.c_str(), requested_perms);
+	FILE *fp = rwz::stdio::fopen(filename.c_str(), requested_perms);
 	if (fp || is_readonly) {
 		return fp;
 	}
 	// Fallback to read-only
 	assert(!fp && !is_readonly);
-	fp = fopen(filename.c_str(), "rb");
+	fp = rwz::stdio::fopen(filename.c_str(), "rb");
 	if (fp) {
 		is_readonly = true;
 		LOG_INFO("FILESYSTEM: Opened %s read-only per host filesystem permissions",
@@ -563,7 +563,7 @@ bool get_expanded_files(const std::string &path,
 	                           std_fs::directory_options::follow_directory_symlink;
 
 	std::error_code ec = {};
-	for (const auto &entry : std_fs::directory_iterator(dir, idir_opts, ec)) {
+	for (const auto &entry : rwz::fs::directory_iterator(dir, idir_opts, ec)) {
 		if (ec)
 			break; // problem iterating, so skip the directory
 

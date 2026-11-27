@@ -12,9 +12,9 @@
 #include "misc/std_filesystem.h"
 #include "utils/string_utils.h"
 
-#include <fstream>
 #include <iostream>
 #include <regex>
+#include "rwzfs/rwz.h"
 
 CHECK_NARROWING();
 
@@ -589,7 +589,7 @@ void SETVER::LoadTableFromFile()
 	};
 
 	// If the file does not exist, save default settings there
-	if (!std_fs::exists(file_path)) {
+	if (!rwz::fs::exists(file_path)) {
 		SaveTableToFile();
 		return;
 	}
@@ -601,7 +601,7 @@ void SETVER::LoadTableFromFile()
 	setver_table.by_file_path.clear();
 
 	// Read table from the file
-	std::ifstream file(file_path.c_str());
+	rwz::stdio::file_istream file(file_path.c_str());
 	std::string line = {};
 	while (std::getline(file, line)) {
 		// Parse line
@@ -665,7 +665,7 @@ void SETVER::SaveTableToFile()
 	}
 
 	// Write table into the file
-	std::ofstream file(file_path.c_str(), std::ios::trunc);
+	rwz::stdio::file_ostream file(file_path.c_str(), std::ios::trunc);
 	if (setver_table.is_global_version_set) {
 		file << "\t" << setver_table.version_global << '\n';
 	}

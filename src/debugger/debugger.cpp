@@ -39,6 +39,7 @@
 #include "utils/string_utils.h"
 
 #include <imgui.h>
+#include "rwzfs/rwz.h"
 
 // forward declarations
 static void DrawCode(void);

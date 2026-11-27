@@ -15,6 +15,7 @@
 #include "shell/shell.h"
 #include "utils/fs_utils.h"
 #include "utils/string_utils.h"
+#include "rwzfs/rwz.h"
 
 constexpr auto default_date = DOS_PackDate(2002, 10, 1);
 constexpr auto default_time = DOS_PackTime(12, 34, 56);
@@ -232,17 +233,17 @@ void VFILE_Remove(const char* name, const char* dir)
 void VFILE_GetPathZDrive(std::string& path, const std::string& dirname)
 {
 	struct stat cstat;
-	int result = stat(path.c_str(), &cstat);
+	int result = rwz::posix::stat(path.c_str(), &cstat);
 	if (result == -1 || !(cstat.st_mode & S_IFDIR)) {
 		path = get_executable_path().string();
 		if (path.length()) {
 			path += dirname;
-			result = stat(path.c_str(), &cstat);
+			result = rwz::posix::stat(path.c_str(), &cstat);
 		}
 		if (!path.length() || result == -1 || (cstat.st_mode & S_IFDIR) == 0) {
 			path.clear();
 			path   = (get_config_dir() / dirname).string();
-			result = stat(path.c_str(), &cstat);
+			result = rwz::posix::stat(path.c_str(), &cstat);
 			if (result == -1 || (cstat.st_mode & S_IFDIR) == 0) {
 				path.clear();
 			}

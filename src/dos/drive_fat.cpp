@@ -13,6 +13,7 @@
 #include "ints/bios_disk.h"
 #include "misc/support.h"
 #include "utils/string_utils.h"
+#include "rwzfs/rwz.h"
 
 #define IMGTYPE_FLOPPY 0
 #define IMGTYPE_ISO    1
@@ -799,7 +800,7 @@ fatDrive::fatDrive(const char* sysFilename, uint32_t bytesector,
 		return;
 	const auto sz = stdio_size_kb(diskfile);
 	if (sz < 0) {
-		fclose(diskfile);
+		rwz::stdio::fclose(diskfile);
 		return;
 	}
 	filesize = check_cast<uint32_t>(sz);

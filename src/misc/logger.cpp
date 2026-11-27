@@ -16,6 +16,7 @@
 #include "misc/std_filesystem.h"
 #include "misc/support.h"
 #include "utils/fs_utils.h"
+#include "rwzfs/rwz.h"
 
 namespace {
 

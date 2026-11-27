@@ -16,6 +16,7 @@
 #include "png_writer.h"
 #include "utils/bgrx8888.h"
 #include "utils/checks.h"
+#include "rwzfs/rwz.h"
 
 CHECK_NARROWING();
 

@@ -3,7 +3,6 @@
 
 #include "shell/shell.h"
 
-#include <fstream>
 
 #include "utils/checks.h"
 #include "config/config.h"
@@ -11,6 +10,7 @@
 #include "utils/fs_utils.h"
 #include "utils/string_utils.h"
 #include "misc/unicode.h"
+#include "rwzfs/rwz.h"
 
 CHECK_NARROWING();
 
@@ -66,9 +66,9 @@ ShellHistory::ShellHistory() : path(get_shell_history_path())
 	if (path.empty()) {
 		return;
 	}
-	auto history_file = std::ifstream(path);
+	auto history_file = rwz::stdio::file_istream(path);
 	if (!history_file) {
-		if (std::filesystem::exists(path)) {
+		if (rwz::fs::exists(path)) {
 			LOG_WARNING("SHELL: Unable to read history file: '%s'",
 		            path.string().c_str());
 			path.clear();
@@ -96,7 +96,7 @@ ShellHistory::~ShellHistory()
 	if (path.empty()) {
 		return;
 	}
-	auto history_file = std::ofstream(path);
+	auto history_file = rwz::stdio::file_ostream(path);
 	if (!history_file) {
 		LOG_WARNING("SHELL: Unable to update history file: '%s'",
 		            path.string().c_str());

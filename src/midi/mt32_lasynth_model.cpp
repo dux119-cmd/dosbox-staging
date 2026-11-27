@@ -10,6 +10,7 @@
 #include <set>
 
 #include "utils/fs_utils.h"
+#include "rwzfs/rwz.h"
 
 // Construct a new model and ensure both PCM and control ROM(s) are provided
 LASynthModel::LASynthModel(const std::string& rom_name, const Rom* pcm_rom_full,

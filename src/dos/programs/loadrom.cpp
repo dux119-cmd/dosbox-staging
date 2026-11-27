@@ -13,6 +13,7 @@
 #include "dos/drives.h"
 #include "more_output.h"
 #include "cpu/registers.h"
+#include "rwzfs/rwz.h"
 
 void LOADROM::Run(void)
 {
@@ -52,16 +53,16 @@ void LOADROM::Run(void)
 			WriteOut(MSG_Get("PROGRAM_LOADROM_CANT_OPEN"));
 			return;
 		}
-		fseek(tmpfile, 0L, SEEK_END);
-		if (ftell(tmpfile) > 0x8000) {
+		rwz::stdio::fseek(tmpfile, 0L, SEEK_END);
+		if (rwz::stdio::ftell(tmpfile) > 0x8000) {
 			WriteOut(MSG_Get("PROGRAM_LOADROM_TOO_LARGE"));
-			fclose(tmpfile);
+			rwz::stdio::fclose(tmpfile);
 			return;
 		}
-		fseek(tmpfile, 0L, SEEK_SET);
+		rwz::stdio::fseek(tmpfile, 0L, SEEK_SET);
 		uint8_t rom_buffer[0x8000];
-		Bitu data_read = fread(rom_buffer, 1, 0x8000, tmpfile);
-		fclose(tmpfile);
+		Bitu data_read = rwz::stdio::fread(rom_buffer, 1, 0x8000, tmpfile);
+		rwz::stdio::fclose(tmpfile);
 
 		/* try to identify ROM type */
 		PhysPt rom_base = 0;

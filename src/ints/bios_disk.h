@@ -14,6 +14,7 @@
 #include "dos/dos.h"
 #include "hardware/memory.h"
 #include "ints/bios.h"
+#include "rwzfs/rwz.h"
 
 /* The Section handling Bios Disk Access */
 #define BIOS_MAX_DISK 10
@@ -48,7 +49,7 @@ public:
 	~imageDisk()
 	{
 		if (diskimg != nullptr)
-			fclose(diskimg);
+			rwz::stdio::fclose(diskimg);
 	}
 
 	bool hardDrive;

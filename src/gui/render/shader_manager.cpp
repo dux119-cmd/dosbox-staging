@@ -5,7 +5,6 @@
 
 #include <algorithm>
 #include <cassert>
-#include <fstream>
 #include <unordered_map>
 
 #include <SDL3/SDL.h>
@@ -16,6 +15,7 @@
 #include "private/shader_pragma_parser.h"
 #include "utils/checks.h"
 #include "utils/string_utils.h"
+#include "rwzfs/rwz.h"
 
 CHECK_NARROWING();
 
@@ -245,9 +245,9 @@ std::optional<ShaderPreset> ShaderManager::LoadShaderPreset(
 		return {};
 	}
 
-	const auto file_exists = std_fs::exists(path) &&
-	                         (std_fs::is_regular_file(path) ||
-	                          std_fs::is_symlink(path));
+	const auto file_exists = rwz::fs::exists(path) &&
+	                         (rwz::fs::is_regular_file(path) ||
+	                          rwz::fs::is_symlink(path));
 	if (!file_exists) {
 		LOG_ERR("RENDER: Error loading shader preset file '%s'; "
 		        "file does not exist or not a regular file",
@@ -330,7 +330,7 @@ std::deque<std::string> ShaderManager::GenerateShaderInventoryMessage() const
 		const auto dir = parent / ShadersDir;
 		auto shaders = get_directory_entries(dir, ".glsl", OnlyRegularFiles);
 
-		const auto dir_exists      = std_fs::is_directory(dir, ec);
+		const auto dir_exists      = rwz::fs::is_directory(dir, ec);
 		auto shader                = shaders.begin();
 		const auto dir_has_shaders = shader != shaders.end();
 
@@ -386,7 +386,7 @@ std::optional<std::string> ShaderManager::FindShaderAndReadSource(
         const std::string& shader_name_with_extension)
 {
 	auto read_shader = [&](const std_fs::path& path) -> std::optional<std::string> {
-		std::ifstream fshader(path, std::ios_base::binary);
+		rwz::stdio::file_istream fshader(path, std::ios_base::binary);
 		if (!fshader.is_open()) {
 			return {};
 		}
@@ -410,8 +410,8 @@ std::optional<std::string> ShaderManager::FindShaderAndReadSource(
 	}
 
 	for (const auto& path : candidate_paths) {
-		if (std_fs::exists(path) &&
-		    (std_fs::is_regular_file(path) || std_fs::is_symlink(path))) {
+		if (rwz::fs::exists(path) &&
+		    (rwz::fs::is_regular_file(path) || rwz::fs::is_symlink(path))) {
 			return read_shader(path);
 		}
 	}

@@ -25,6 +25,7 @@
 #include "dos/programs.h"
 #include "dos/programs/more_output.h"
 #include "utils/string_utils.h"
+#include "rwzfs/rwz.h"
 
 class MidiDeviceWin32 final : public MidiDevice {
 public:

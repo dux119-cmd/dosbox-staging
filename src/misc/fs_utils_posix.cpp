@@ -20,6 +20,7 @@
 #include "misc/logging.h"
 #include "utils/env_utils.h"
 #include "utils/string_utils.h"
+#include "rwzfs/rwz.h"
 
 static std::string translate_to_glob_pattern(const std::string &path) noexcept
 {
@@ -60,7 +61,7 @@ std::string to_native_path(const std::string &path) noexcept
 	// the pattern, return the first one (in alphabetic order) that matches.
 	const std::string pattern = translate_to_glob_pattern(path);
 	glob_t pglob;
-	const int err = glob(pattern.c_str(), GLOB_TILDE, nullptr, &pglob);
+	const int err = rwz::posix::glob(pattern.c_str(), GLOB_TILDE, nullptr, &pglob);
 	if (err == GLOB_NOMATCH) {
 		globfree(&pglob);
 		return "";
@@ -88,7 +89,7 @@ std::string to_native_path(const std::string &path) noexcept
 uint16_t local_drive_create_dir(const char* path)
 {
 	static_assert(sizeof(uint32_t) >= sizeof(mode_t), "");
-	const int err = mkdir(path, 0775);
+	const int err = rwz::posix::mkdir(path, 0775);
 	if (err == 0) {
 		return DOSERR_NONE;
 	}
@@ -281,7 +282,7 @@ uint16_t local_drive_get_attributes(const char* path,
                                     FatAttributeFlags& attributes)
 {
 	struct stat status;
-	if (stat(path, &status) != 0) {
+	if (rwz::posix::stat(path, &status) != 0) {
 		attributes = 0;
 		return DOSERR_FILE_NOT_FOUND;
 	}
@@ -319,7 +320,7 @@ uint16_t local_drive_set_attributes(const char* path,
 	if (status) {
 		struct stat file_info;
 		bool is_directory = true;
-		if (stat(path, &file_info) == 0) {
+		if (rwz::posix::stat(path, &file_info) == 0) {
 			is_directory = file_info.st_mode & S_IFDIR;
 		}
 		status = set_xattr(path, attributes);
@@ -336,13 +337,13 @@ uint16_t local_drive_set_attributes(const char* path,
 
 NativeFileHandle open_native_file(const char* path, const bool write_access)
 {
-	return open(path, write_access ? O_RDWR : O_RDONLY);
+	return rwz::posix::open(path, write_access ? O_RDWR : O_RDONLY);
 }
 
 NativeFileHandle create_native_file(const char* path,
                                     const std::optional<FatAttributeFlags> attributes)
 {
-	const auto file_descriptor = open(path,
+	const auto file_descriptor = rwz::posix::open(path,
 	                                  O_CREAT | O_RDWR | O_TRUNC,
 	                                  PermissionsRW);
 	if (attributes && file_descriptor != InvalidNativeFileHandle) {
@@ -364,7 +365,7 @@ NativeIoResult read_native_file(const NativeFileHandle handle, uint8_t* buffer,
 	ret.num_bytes      = 0;
 	ret.error          = false;
 	while (ret.num_bytes < num_bytes_requested) {
-		const auto num_bytes_read = read(handle,
+		const auto num_bytes_read = rwz::posix::read(handle,
 		                                 buffer + ret.num_bytes,
 		                                 num_bytes_requested - ret.num_bytes);
 		if (num_bytes_read <= 0) {
@@ -383,7 +384,7 @@ NativeIoResult write_native_file(const NativeFileHandle handle, const uint8_t* b
 	ret.num_bytes      = 0;
 	ret.error          = false;
 	while (ret.num_bytes < num_bytes_requested) {
-		const auto num_bytes_written = write(handle,
+		const auto num_bytes_written = rwz::posix::write(handle,
 		                                     buffer + ret.num_bytes,
 		                                     num_bytes_requested -
 		                                             ret.num_bytes);
@@ -407,7 +408,7 @@ int64_t seek_native_file(const NativeFileHandle handle, const int64_t offset,
 	default: assertm(false, "Invalid seek type"); return NativeSeekFailed;
 	}
 
-	const auto position = lseek(handle, offset, posix_seek_type);
+	const auto position = rwz::posix::lseek(handle, offset, posix_seek_type);
 	if (position < 0) {
 		return NativeSeekFailed;
 	}
@@ -417,13 +418,13 @@ int64_t seek_native_file(const NativeFileHandle handle, const int64_t offset,
 
 void close_native_file(const NativeFileHandle handle)
 {
-	close(handle);
+	rwz::posix::close(handle);
 }
 
 // Sets the file size to be equal to the current file position
 bool truncate_native_file(const NativeFileHandle handle)
 {
-	const auto current_position = lseek(handle, 0, SEEK_CUR);
+	const auto current_position = rwz::posix::lseek(handle, 0, SEEK_CUR);
 	if (current_position < 0) {
 		return false;
 	}
@@ -480,22 +481,22 @@ void set_dos_file_time(const NativeFileHandle handle, const uint16_t date, const
 
 bool delete_native_file(const char* path)
 {
-	return unlink(path) == 0;
+	return rwz::posix::unlink(path) == 0;
 }
 
 bool local_drive_remove_dir(const char* path)
 {
-	return rmdir(path) == 0;
+	return rwz::posix::rmdir(path) == 0;
 }
 
 bool local_drive_path_exists(const char* path)
 {
-	return access(path, F_OK) == 0;
+	return rwz::posix::access(path, F_OK) == 0;
 }
 
 bool local_drive_rename_file_or_directory(const char* old_path, const char* new_path)
 {
-	return rename(old_path, new_path) == 0;
+	return rwz::stdio::rename(old_path, new_path) == 0;
 }
 
 uint32_t local_drive_get_file_size(const NativeFileHandle handle)

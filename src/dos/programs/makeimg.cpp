@@ -28,6 +28,7 @@
 #include "utils/checks.h"
 #include "utils/math_utils.h"
 #include "utils/string_utils.h"
+#include "rwzfs/rwz.h"
 
 CHECK_NARROWING();
 
@@ -99,7 +100,7 @@ struct FileCloser {
 	void operator()(FILE* fp) const
 	{
 		if (fp) {
-			fclose(fp);
+			rwz::stdio::fclose(fp);
 		}
 	}
 };
@@ -813,14 +814,14 @@ static bool open_and_expand_file(const CommandSettings& settings,
 {
 	// Check File Existence
 	std::error_code ec;
-	if (std_fs::exists(settings.filename, ec) && !settings.force) {
+	if (rwz::fs::exists(settings.filename, ec) && !settings.force) {
 		notify_warning("SHELL_CMD_MAKEIMG_FILE_EXISTS",
 		               settings.filename.string().c_str());
 		return false;
 	}
 
 	// Create file (truncate if exists)
-	FILE* raw_fs = fopen(settings.filename.string().c_str(), "wb+");
+	FILE* raw_fs = rwz::stdio::fopen(settings.filename.string().c_str(), "wb+");
 	if (!raw_fs) {
 		notify_warning("SHELL_CMD_MAKEIMG_CANNOT_WRITE",
 		               settings.filename.string().c_str());
@@ -988,7 +989,7 @@ static void write_mbr(ImageCreationContext& ctx)
 
 	buffer[510] = 0x55;
 	buffer[511] = 0xAA;
-	fwrite(buffer.data(), 1, buffer.size(), ctx.fs);
+	rwz::stdio::fwrite(buffer.data(), 1, buffer.size(), ctx.fs);
 }
 
 static void write_boot_sector(const CommandSettings& settings,
@@ -1241,7 +1242,7 @@ static void write_boot_sector(const CommandSettings& settings,
 	boot_sector->signature[1] = 0xAA;
 
 	// Write Main Boot Sector
-	fwrite(buffer.data(), 1, buffer.size(), ctx.fs);
+	rwz::stdio::fwrite(buffer.data(), 1, buffer.size(), ctx.fs);
 
 	// Write Extra FAT32 Structures (FSInfo + Backup)
 	if (ctx.fat_bits == 32) {
@@ -1263,7 +1264,7 @@ static void write_boot_sector(const CommandSettings& settings,
 		write_le(&fs_info->trail_signature, Fat32TrailSignature);
 
 		// Write FSInfo at Sector 1
-		fwrite(fs_info_buffer.data(),
+		rwz::stdio::fwrite(fs_info_buffer.data(),
 		       1,
 		       ImageCreationContext::SectorSizeBytes,
 		       ctx.fs);
@@ -1275,10 +1276,10 @@ static void write_boot_sector(const CommandSettings& settings,
 		             (ctx.boot_sector_position + 6) *
 		                     ImageCreationContext::SectorSizeBytes,
 		             SEEK_SET);
-		fwrite(buffer.data(), 1, ImageCreationContext::SectorSizeBytes, ctx.fs);
+		rwz::stdio::fwrite(buffer.data(), 1, ImageCreationContext::SectorSizeBytes, ctx.fs);
 
 		// Write Backup FSInfo at Sector 7
-		fwrite(fs_info_buffer.data(),
+		rwz::stdio::fwrite(fs_info_buffer.data(),
 		       1,
 		       ImageCreationContext::SectorSizeBytes,
 		       ctx.fs);
@@ -1324,11 +1325,11 @@ static void write_fats(const CommandSettings& settings, ImageCreationContext& ct
 
 	for (auto i = 0; i < settings.fat_copies; ++i) {
 		auto current_fat_start = cross_ftello(ctx.fs);
-		fwrite(fat_sector_buffer.data(), 1, fat_sector_buffer.size(), ctx.fs);
+		rwz::stdio::fwrite(fat_sector_buffer.data(), 1, fat_sector_buffer.size(), ctx.fs);
 
 		// Fill remaining FAT sectors with zeroes
 		for (int k = 1; k < ctx.fat_size_sectors; ++k) {
-			fwrite(empty_sector.data(), 1, empty_sector.size(), ctx.fs);
+			rwz::stdio::fwrite(empty_sector.data(), 1, empty_sector.size(), ctx.fs);
 		}
 
 		// Seek to start of next FAT copy
@@ -1353,7 +1354,7 @@ static void write_root_dir(const CommandSettings& settings, ImageCreationContext
 
 	// Volume ID
 	entry->attributes = 0x08;
-	fwrite(root_buffer.data(), 1, root_buffer.size(), ctx.fs);
+	rwz::stdio::fwrite(root_buffer.data(), 1, root_buffer.size(), ctx.fs);
 }
 
 static bool execute(Program* program, CommandSettings& settings)
@@ -1392,7 +1393,7 @@ static bool execute(Program* program, CommandSettings& settings)
 		// Resolve Host path (handle ~ expansion, etc.)
 		settings.filename = resolve_path(settings.filename.string());
 		std::error_code ec;
-		full_host_path = std_fs::absolute(settings.filename, ec);
+		full_host_path = rwz::fs::absolute(settings.filename, ec);
 		// Fallback to relative path if absolute resolution fails for
 		// whatever reason
 		if (ec) {

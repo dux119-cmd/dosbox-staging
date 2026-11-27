@@ -657,6 +657,7 @@ enum STBVorbisError
 
 #if 0
 #include <crtdbg.h>
+#include "rwzfs/rwz.h"
 #define CHECK(f)   _CrtIsValidHeapPointer(f->channel_buffers[1])
 #else
 #define CHECK(f)   ((void) 0)
@@ -1458,7 +1459,7 @@ static int getn(vorb *z, uint8 *data, int n)
    #endif
 
    #ifndef STB_VORBIS_NO_STDIO   
-   if (fread(data, n, 1, z->f) == 1)
+   if (rwz::stdio::fread(data, n, 1, z->f) == 1)
       return 1;
    else {
       z->eof = 1;
@@ -1483,8 +1484,8 @@ static void skip(vorb *z, int n)
 
    #ifndef STB_VORBIS_NO_STDIO
    {
-      long x = ftell(z->f);
-      fseek(z->f, x+n, SEEK_SET);
+      long x = rwz::stdio::ftell(z->f);
+      rwz::stdio::fseek(z->f, x+n, SEEK_SET);
    }
    #endif
 }
@@ -1529,10 +1530,10 @@ static int set_file_offset(stb_vorbis *f, unsigned int loc)
    } else {
       loc += f->f_start;
    }
-   if (!fseek(f->f, loc, SEEK_SET))
+   if (!rwz::stdio::fseek(f->f, loc, SEEK_SET))
       return 1;
    f->eof = 1;
-   fseek(f->f, f->f_start, SEEK_END);
+   rwz::stdio::fseek(f->f, f->f_start, SEEK_END);
    return 0;
    #endif
 }
@@ -4415,7 +4416,7 @@ static void vorbis_deinit(stb_vorbis *p)
    if (p->close_on_free) SDL_CloseIO(p->rwops);
    #endif
    #ifndef STB_VORBIS_NO_STDIO
-   if (p->close_on_free) fclose(p->f);
+   if (p->close_on_free) rwz::stdio::fclose(p->f);
    #endif
 }
 
@@ -4710,7 +4711,7 @@ unsigned int stb_vorbis_get_file_offset(stb_vorbis *f)
    if (USE_MEMORY(f)) return (unsigned int) (f->stream - f->stream_start);
    #endif
    #ifndef STB_VORBIS_NO_STDIO
-   return (unsigned int) (ftell(f->f) - f->f_start);
+   return (unsigned int) (rwz::stdio::ftell(f->f) - f->f_start);
    #endif
 }
 
@@ -5220,7 +5221,7 @@ stb_vorbis * stb_vorbis_open_file_section(FILE *file, int close_on_free, int *er
    stb_vorbis *f, p;
    vorbis_init(&p, alloc);
    p.f = file;
-   p.f_start = (uint32) ftell(file);
+   p.f_start = (uint32) rwz::stdio::ftell(file);
    p.stream_len   = length;
    p.close_on_free = close_on_free;
    if (start_decoder(&p)) {
@@ -5239,10 +5240,10 @@ stb_vorbis * stb_vorbis_open_file_section(FILE *file, int close_on_free, int *er
 stb_vorbis * stb_vorbis_open_file(FILE *file, int close_on_free, int *error, const stb_vorbis_alloc *alloc)
 {
    unsigned int len, start;
-   start = (unsigned int) ftell(file);
-   fseek(file, 0, SEEK_END);
-   len = (unsigned int) (ftell(file) - start);
-   fseek(file, start, SEEK_SET);
+   start = (unsigned int) rwz::stdio::ftell(file);
+   rwz::stdio::fseek(file, 0, SEEK_END);
+   len = (unsigned int) (rwz::stdio::ftell(file) - start);
+   rwz::stdio::fseek(file, start, SEEK_SET);
    return stb_vorbis_open_file_section(file, close_on_free, error, alloc, len);
 }
 
@@ -5250,10 +5251,10 @@ stb_vorbis * stb_vorbis_open_filename(const char *filename, int *error, const st
 {
    FILE *f;
 #if defined(_WIN32) && defined(__STDC_WANT_SECURE_LIB__)
-   if (0 != fopen_s(&f, filename, "rb"))
+   if (0 != rwz::stdio::fopen_s(&f, filename, "rb"))
       f = NULL;
 #else
-   f = fopen(filename, "rb");
+   f = rwz::stdio::fopen(filename, "rb");
 #endif
    if (f)
       return stb_vorbis_open_file(f, TRUE, error, alloc);

@@ -1240,6 +1240,7 @@ LOGURU_ANONYMOUS_NAMESPACE_END
 #include <cstdarg>
 #include <sstream> // Adds about 38 kLoC on clang.
 #include <string>
+#include "rwzfs/rwz.h"
 
 LOGURU_ANONYMOUS_NAMESPACE_BEGIN
 

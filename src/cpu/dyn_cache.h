@@ -26,6 +26,7 @@
 #if defined(WIN32)
 #include <memoryapi.h>
 #include <processthreadsapi.h>
+#include "rwzfs/rwz.h"
 #endif
 
 class CodePageHandler;

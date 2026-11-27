@@ -5,7 +5,6 @@
 
 #include <algorithm>
 #include <array>
-#include <fstream>
 #include <iterator>
 #include <optional>
 #include <set>
@@ -22,6 +21,7 @@
 #include "utils/string_utils.h"
 #include "misc/support.h"
 #include "misc/unicode.h"
+#include "rwzfs/rwz.h"
 
 CHECK_NARROWING();
 
@@ -1826,7 +1826,7 @@ static void maybe_read_bundled_font(const uint16_t code_page)
 
 	// Open the file
 	const auto resource_path  = get_resource_path(ResourceDir, file_name);
-	std::ifstream file_stream = {};
+	rwz::stdio::file_istream file_stream = {};
 	file_stream.open(resource_path, std::ios::binary);
 	if (file_stream.bad()) {
 		LOG_ERR("LOCALE: Could not open %s", name_for_log.c_str());

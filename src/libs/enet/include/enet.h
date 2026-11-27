@@ -160,6 +160,7 @@
     #include <mach/clock.h>
     #include <mach/mach.h>
     #include <Availability.h>
+#include "rwzfs/rwz.h"
     #endif
 
     #ifndef MSG_NOSIGNAL

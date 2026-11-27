@@ -5,7 +5,6 @@
 
 #include <algorithm>
 #include <cctype>
-#include <fstream>
 #include <map>
 #include <set>
 #include <sstream>
@@ -16,6 +15,7 @@
 #include "misc/unicode.h"
 #include "utils/checks.h"
 #include "utils/unicode_encodings.h"
+#include "rwzfs/rwz.h"
 
 CHECK_NARROWING();
 
@@ -886,11 +886,11 @@ bool add_if_not_mapped(std::map<T1, T2>& mapping, T1 first, T2 second)
 	return was_added;
 }
 
-static std::ifstream open_mapping_file(const std_fs::path& path_root,
+static rwz::stdio::file_istream open_mapping_file(const std_fs::path& path_root,
                                        const std::string& file_name)
 {
 	const std_fs::path file_path = path_root / file_name;
-	std::ifstream in_file(file_path.string());
+	rwz::stdio::file_istream in_file(file_path.string());
 	if (!in_file) {
 		LOG_ERR("UNICODE: Could not open mapping file %s",
 		        file_name.c_str());
@@ -899,7 +899,7 @@ static std::ifstream open_mapping_file(const std_fs::path& path_root,
 	return in_file;
 }
 
-static bool get_line(std::ifstream& in_file, std::string& line_str, size_t& line_num)
+static bool get_line(rwz::stdio::file_istream& in_file, std::string& line_str, size_t& line_num)
 {
 	line_str.clear();
 
@@ -1114,7 +1114,7 @@ static void error_code_page_none(const std::string& file_name, const size_t line
 	error_parsing(file_name, line_num, "not currently defining a code page");
 }
 
-static bool check_import_status(const std::ifstream& in_file,
+static bool check_import_status(const rwz::stdio::file_istream& in_file,
                                 const std::string& file_name, const bool empty)
 {
 	if (in_file.fail() && !in_file.eof()) {

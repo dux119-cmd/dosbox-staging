@@ -28,8 +28,10 @@
 #include "misc/cross.h"
 #include "shell/command_line.h"
 #include "shell/shell.h"
+#include "archive/archive_cli.h"
 #include "utils/checks.h"
 #include "utils/env_utils.h"
+#include "rwzfs/rwz.h"
 
 CHECK_NARROWING();
 
@@ -348,7 +350,7 @@ static int erase_primary_config_file()
 	}
 
 	std::error_code ec = {};
-	if (!std_fs::remove(path, ec)) {
+	if (!rwz::fs::remove(path, ec)) {
 		fprintf(stderr,
 		        "Cannot delete primary config '%s'",
 		        path.string().c_str());
@@ -376,7 +378,7 @@ static int erase_mapper_file()
 	}
 
 	std::error_code ec = {};
-	if (!std_fs::remove(path, ec)) {
+	if (!rwz::fs::remove(path, ec)) {
 		fprintf(stderr,
 		        "Cannot delete mapper file '%s'",
 		        path.string().c_str());
@@ -571,7 +573,7 @@ static void wait_for_pid(const int wait_pid)
 		// If we failed to open it, it's probably already dead.
 		constexpr DWORD Timeout = INFINITE;
 		WaitForSingleObject(process, Timeout);
-		CloseHandle(process);
+		rwz::win32::close_handle(process);
 	}
 #else
 	for (;;) {
@@ -593,16 +595,22 @@ static void wait_for_pid(const int wait_pid)
 
 #include <SDL3/SDL.h>
 #include <SDL3/SDL_main.h>
+#include "rwzfs/rwz.h"
 
 int main(int argc, char* argv[])
 {
 	// Ensure we perform SDL cleanup and restore console settings at exit
 	atexit(quit_func);
 
-	CommandLine command_line(argc, argv);
+	// Archive options and a bare archive argument are handled before Config copies the arguments.
+	const auto archive_request = archive_cli::pre_parse(argc, argv);
+	CommandLine command_line(archive_request.argc(), archive_request.argv());
+	
 	control = std::make_unique<Config>(&command_line);
 
 	const auto arguments = &control->arguments;
+
+
 
 #ifdef WIN32
 	if (!setup_windows_console_window(arguments->noconsole)) {
@@ -642,7 +650,7 @@ int main(int argc, char* argv[])
 	try {
 		if (!arguments->working_dir.empty()) {
 			std::error_code ec;
-			std_fs::current_path(arguments->working_dir, ec);
+			rwz::fs::current_path(arguments->working_dir, ec);
 			if (ec) {
 				LOG_ERR("Cannot set working directory to '%s'",
 				        arguments->working_dir.c_str());
@@ -678,6 +686,11 @@ int main(int argc, char* argv[])
 		DOSBOX_InitModuleConfigsAndMessages();
 
 		maybe_write_primary_config(*arguments);
+
+		// Runs an archive action (--revise, --clear-changes, --create-archive, --extract), or mounts a bare archive.
+		if (const auto archive_exit = archive_cli::run(archive_request); archive_exit) {
+			return *archive_exit;
+		}
 
 		// After DOSBOX_InitModuleConfigsAndMessages() all the config
 		// sections have been registered, so we're ready to parse the

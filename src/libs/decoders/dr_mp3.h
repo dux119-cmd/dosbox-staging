@@ -2950,6 +2950,7 @@ DRMP3_API drmp3_bool32 drmp3_init_memory(drmp3* pMP3, const void* pData, size_t 
 /* Errno */
 /* drmp3_result_from_errno() is only used inside DR_MP3_NO_STDIO for now. Move this out if it's ever used elsewhere. */
 #include <errno.h>
+#include "rwzfs/rwz.h"
 static drmp3_result drmp3_result_from_errno(int e)
 {
     switch (e)
@@ -3369,18 +3370,18 @@ static drmp3_result drmp3_fopen(FILE** ppFile, const char* pFilePath, const char
     }
 
 #if defined(_MSC_VER) && _MSC_VER >= 1400
-    err = fopen_s(ppFile, pFilePath, pOpenMode);
+    err = rwz::stdio::fopen_s(ppFile, pFilePath, pOpenMode);
     if (err != 0) {
         return drmp3_result_from_errno(err);
     }
 #else
 #if defined(_WIN32) || defined(__APPLE__)
-    *ppFile = fopen(pFilePath, pOpenMode);
+    *ppFile = rwz::stdio::fopen(pFilePath, pOpenMode);
 #else
     #if defined(_FILE_OFFSET_BITS) && _FILE_OFFSET_BITS == 64 && defined(_LARGEFILE64_SOURCE)
-        *ppFile = fopen64(pFilePath, pOpenMode);
+        *ppFile = rwz::stdio::fopen(pFilePath, pOpenMode);
     #else
-        *ppFile = fopen(pFilePath, pOpenMode);
+        *ppFile = rwz::stdio::fopen(pFilePath, pOpenMode);
     #endif
 #endif
     if (*ppFile == NULL) {
@@ -3397,7 +3398,7 @@ static drmp3_result drmp3_fopen(FILE** ppFile, const char* pFilePath, const char
 }
 
 /*
-_wfopen() isn't always available in all compilation environments.
+rwz::stdio::wfopen() isn't always available in all compilation environments.
 
     * Windows only.
     * MSVC seems to support it universally as far back as VC6 from what I can tell (haven't checked further back).
@@ -3405,7 +3406,7 @@ _wfopen() isn't always available in all compilation environments.
     * MinGW wraps it in !defined(__STRICT_ANSI__).
     * OpenWatcom wraps it in !defined(_NO_EXT_KEYS).
 
-This can be reviewed as compatibility issues arise. The preference is to use _wfopen_s() and _wfopen() as opposed to the wcsrtombs()
+This can be reviewed as compatibility issues arise. The preference is to use _wfopen_s() and rwz::stdio::wfopen() as opposed to the wcsrtombs()
 fallback, so if you notice your compiler not detecting this properly I'm happy to look at adding support.
 */
 #if defined(_WIN32)
@@ -3428,12 +3429,12 @@ static drmp3_result drmp3_wfopen(FILE** ppFile, const wchar_t* pFilePath, const 
     {
         /* Use _wfopen() on Windows. */
     #if defined(_MSC_VER) && _MSC_VER >= 1400
-        errno_t err = _wfopen_s(ppFile, pFilePath, pOpenMode);
+        errno_t err = rwz::stdio::wfopen_s(ppFile, pFilePath, pOpenMode);
         if (err != 0) {
             return drmp3_result_from_errno(err);
         }
     #else
-        *ppFile = _wfopen(pFilePath, pOpenMode);
+        *ppFile = rwz::stdio::wfopen(pFilePath, pOpenMode);
         if (*ppFile == NULL) {
             return drmp3_result_from_errno(errno);
         }
@@ -3443,7 +3444,7 @@ static drmp3_result drmp3_wfopen(FILE** ppFile, const wchar_t* pFilePath, const 
 #else
     /*
     Use fopen() on anything other than Windows. Requires a conversion. This is annoying because
-	fopen() is locale specific. The only real way I can think of to do this is with wcsrtombs(). Note
+	rwz::stdio::fopen() is locale specific. The only real way I can think of to do this is with wcsrtombs(). Note
 	that wcstombs() is apparently not thread-safe because it uses a static global mbstate_t object for
     maintaining state. I've checked this with -std=c89 and it works, but if somebody get's a compiler
 	error I'll look into improving compatibility.
@@ -3496,7 +3497,7 @@ static drmp3_result drmp3_wfopen(FILE** ppFile, const wchar_t* pFilePath, const 
             }
         }
 
-        *ppFile = fopen(pFilePathMB, pOpenModeMB);
+        *ppFile = rwz::stdio::fopen(pFilePathMB, pOpenModeMB);
 
         drmp3__free_from_callbacks(pFilePathMB, pAllocationCallbacks);
     }
@@ -3514,12 +3515,12 @@ static drmp3_result drmp3_wfopen(FILE** ppFile, const wchar_t* pFilePath, const 
 
 static size_t drmp3__on_read_stdio(void* pUserData, void* pBufferOut, size_t bytesToRead)
 {
-    return fread(pBufferOut, 1, bytesToRead, (FILE*)pUserData);
+    return rwz::stdio::fread(pBufferOut, 1, bytesToRead, (FILE*)pUserData);
 }
 
 static drmp3_bool32 drmp3__on_seek_stdio(void* pUserData, int offset, drmp3_seek_origin origin)
 {
-    return fseek((FILE*)pUserData, offset, (origin == drmp3_seek_origin_current) ? SEEK_CUR : SEEK_SET) == 0;
+    return rwz::stdio::fseek((FILE*)pUserData, offset, (origin == drmp3_seek_origin_current) ? SEEK_CUR : SEEK_SET) == 0;
 }
 
 DRMP3_API drmp3_bool32 drmp3_init_file(drmp3* pMP3, const char* pFilePath, const drmp3_allocation_callbacks* pAllocationCallbacks)
@@ -3533,7 +3534,7 @@ DRMP3_API drmp3_bool32 drmp3_init_file(drmp3* pMP3, const char* pFilePath, const
 
     result = drmp3_init(pMP3, drmp3__on_read_stdio, drmp3__on_seek_stdio, (void*)pFile, pAllocationCallbacks);
     if (result != DRMP3_TRUE) {
-        fclose(pFile);
+        rwz::stdio::fclose(pFile);
         return result;
     }
 
@@ -3551,7 +3552,7 @@ DRMP3_API drmp3_bool32 drmp3_init_file_w(drmp3* pMP3, const wchar_t* pFilePath, 
 
     result = drmp3_init(pMP3, drmp3__on_read_stdio, drmp3__on_seek_stdio, (void*)pFile, pAllocationCallbacks);
     if (result != DRMP3_TRUE) {
-        fclose(pFile);
+        rwz::stdio::fclose(pFile);
         return result;
     }
 
@@ -3569,7 +3570,7 @@ DRMP3_API void drmp3_uninit(drmp3* pMP3)
     if (pMP3->onRead == drmp3__on_read_stdio) {
         FILE* pFile = (FILE*)pMP3->pUserData;
         if (pFile != NULL) {
-            fclose(pFile);
+            rwz::stdio::fclose(pFile);
             pMP3->pUserData = NULL; /* Make sure the file handle is cleared to NULL to we don't attempt to close it a second time. */
         }
     }

@@ -40,4 +40,3 @@ endif()
 
 target_include_directories(dosboxcommon SYSTEM PRIVATE ../libs/include)
 target_link_libraries(dosboxcommon PRIVATE whereami)
-

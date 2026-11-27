@@ -13,6 +13,7 @@
 #include "hardware/pic.h"
 #include "midi/midi.h"
 #include "misc/support.h"
+#include "rwzfs/rwz.h"
 
 static struct {
 	FILE* handle = nullptr;

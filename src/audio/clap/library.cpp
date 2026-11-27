@@ -14,6 +14,7 @@
 #include "misc/support.h"
 #include "utils/checks.h"
 #include "utils/string_utils.h"
+#include "rwzfs/rwz.h"
 
 CHECK_NARROWING();
 
@@ -24,7 +25,7 @@ namespace Clap {
 	std::vector<std_fs::path> files = {};
 
 	std::error_code ec;
-	for (const auto& entry : std_fs::directory_iterator(path, ec)) {
+	for (const auto& entry : rwz::fs::directory_iterator(path, ec)) {
 		if (ec) {
 			return {};
 		}

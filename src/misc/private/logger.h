@@ -16,6 +16,7 @@
 #include "misc/std_filesystem.h"
 
 #include "loguru/loguru.hpp"
+#include "rwzfs/rwz.h"
 
 class Logger {
 public:

@@ -20,6 +20,7 @@
 #include "ints/int10.h"
 #include "utils/math_utils.h"
 #include "utils/string_utils.h"
+#include "rwzfs/rwz.h"
 
 static const std::string ResourceDir = "freedos-keyboard";
 
@@ -50,7 +51,7 @@ static FILE_unique_ptr open_layout_file(const std::string& name)
 	}
 
 	// Then try from the local filesystem
-	if (const auto fp = fopen(name.c_str(), FilePermissions); fp) {
+	if (const auto fp = rwz::stdio::fopen(name.c_str(), FilePermissions); fp) {
 		return FILE_unique_ptr(fp);
 	}
 
@@ -190,20 +191,20 @@ static uint32_t read_kcl_file(const FILE_unique_ptr& kcl_file,
 	static uint8_t rbuf[8192];
 
 	// check ID-bytes of file
-	auto dr = fread(rbuf, sizeof(uint8_t), 7, kcl_file.get());
+	auto dr = rwz::stdio::fread(rbuf, sizeof(uint8_t), 7, kcl_file.get());
 	if ((dr < 7) || (rbuf[0] != 0x4b) || (rbuf[1] != 0x43) || (rbuf[2] != 0x46)) {
 		return 0;
 	}
 
 	const auto seek_pos = 7 + rbuf[6];
-	if (fseek(kcl_file.get(), seek_pos, SEEK_SET) != 0) {
+	if (rwz::stdio::fseek(kcl_file.get(), seek_pos, SEEK_SET) != 0) {
 		log_layout_read_error();
 		return 0;
 	}
 
 	for (;;) {
-		const auto cur_pos = ftell(kcl_file.get());
-		dr = fread(rbuf, sizeof(uint8_t), 5, kcl_file.get());
+		const auto cur_pos = rwz::stdio::ftell(kcl_file.get());
+		dr = rwz::stdio::fread(rbuf, sizeof(uint8_t), 5, kcl_file.get());
 		if (dr < 5)
 			break;
 		uint16_t len=host_readw(&rbuf[0]);
@@ -215,21 +216,21 @@ static uint32_t read_kcl_file(const FILE_unique_ptr& kcl_file,
 		char lng_codes[258];
 
 		constexpr int8_t lang_codes_offset = -2;
-		if (fseek(kcl_file.get(), lang_codes_offset, SEEK_CUR) != 0) {
+		if (rwz::stdio::fseek(kcl_file.get(), lang_codes_offset, SEEK_CUR) != 0) {
 			log_layout_read_error();
 			return 0;
 		}
 
 		// get all the layouts from this file
 		for (auto i = 0; i < data_len;) {
-			if (fread(rbuf, sizeof(uint8_t), 2, kcl_file.get()) != 2) {
+			if (rwz::stdio::fread(rbuf, sizeof(uint8_t), 2, kcl_file.get()) != 2) {
 				break;
 			}
 			uint16_t lcnum = host_readw(&rbuf[0]);
 			i+=2;
 			uint16_t lng_pos = 0;
 			while (i < data_len) {
-				if (fread(rbuf, sizeof(uint8_t), 1, kcl_file.get()) != 1) {
+				if (rwz::stdio::fread(rbuf, sizeof(uint8_t), 1, kcl_file.get()) != 1) {
 					break;
 				}
 				i++;
@@ -251,7 +252,7 @@ static uint32_t read_kcl_file(const FILE_unique_ptr& kcl_file,
 				}
 			}
 		}
-		if (fseek(kcl_file.get(), cur_pos + 3 + len, SEEK_SET) != 0) {
+		if (rwz::stdio::fseek(kcl_file.get(), cur_pos + 3 + len, SEEK_SET) != 0) {
 			log_layout_read_error();
 			return 0;
 		}
@@ -330,17 +331,17 @@ KeyboardLayoutResult KeyboardLayout::ReadKeyboardFile(const std::string& keyboar
 		}
 		if (tempfile) {
 			const auto seek_pos = start_pos + 2;
-			if (fseek(tempfile.get(), seek_pos, SEEK_SET) != 0) {
+			if (rwz::stdio::fseek(tempfile.get(), seek_pos, SEEK_SET) != 0) {
 				log_layout_read_error();
 				return KeyboardLayoutResult::InvalidLayoutFile;
 			}
-			read_buf_size = (uint32_t)fread(read_buf, sizeof(uint8_t),
+			read_buf_size = (uint32_t)rwz::stdio::fread(read_buf, sizeof(uint8_t),
 			                              65535, tempfile.get());
 		}
 		start_pos=0;
 	} else {
 		// check ID-bytes of file
-		auto dr = (uint32_t)fread(read_buf, sizeof(uint8_t), 4,
+		auto dr = (uint32_t)rwz::stdio::fread(read_buf, sizeof(uint8_t), 4,
 		                          tempfile.get());
 		if ((dr<4) || (read_buf[0]!=0x4b) || (read_buf[1]!=0x4c) || (read_buf[2]!=0x46)) {
 			LOG_WARNING("LOCALE: Keyboard layout file for layout '%s' is invalid",
@@ -348,8 +349,8 @@ KeyboardLayoutResult KeyboardLayout::ReadKeyboardFile(const std::string& keyboar
 			return KeyboardLayoutResult::InvalidLayoutFile;
 		}
 
-		fseek(tempfile.get(), 0, SEEK_SET);
-		read_buf_size = (uint32_t)fread(read_buf, sizeof(uint8_t), 65535,
+		rwz::stdio::fseek(tempfile.get(), 0, SEEK_SET);
+		read_buf_size = (uint32_t)rwz::stdio::fread(read_buf, sizeof(uint8_t), 65535,
 		                              tempfile.get());
 	}
 
@@ -692,13 +693,13 @@ uint16_t KeyboardLayout::ExtractCodePage(const std::string& keyboard_layout)
 			return DefaultCodePage;
 		}
 		if (tempfile) {
-			fseek(tempfile.get(), start_pos + 2, SEEK_SET);
-			read_buf_size = fread(read_buf, sizeof(uint8_t), 65535, tempfile.get());
+			rwz::stdio::fseek(tempfile.get(), start_pos + 2, SEEK_SET);
+			read_buf_size = rwz::stdio::fread(read_buf, sizeof(uint8_t), 65535, tempfile.get());
 		}
 		start_pos=0;
 	} else {
 		// check ID-bytes of file
-		auto dr = (uint32_t)fread(read_buf, sizeof(uint8_t), 4,
+		auto dr = (uint32_t)rwz::stdio::fread(read_buf, sizeof(uint8_t), 4,
 		                          tempfile.get());
 		if ((dr<4) || (read_buf[0]!=0x4b) || (read_buf[1]!=0x4c) || (read_buf[2]!=0x46)) {
 			LOG_WARNING("LOCALE: Keyboard layout file for layout '%s' is invalid",
@@ -706,8 +707,8 @@ uint16_t KeyboardLayout::ExtractCodePage(const std::string& keyboard_layout)
 			return DefaultCodePage;
 		}
 
-		fseek(tempfile.get(), 0, SEEK_SET);
-		read_buf_size = fread(read_buf, sizeof(uint8_t), 65535, tempfile.get());
+		rwz::stdio::fseek(tempfile.get(), 0, SEEK_SET);
+		read_buf_size = rwz::stdio::fread(read_buf, sizeof(uint8_t), 65535, tempfile.get());
 	}
 	if (read_buf_size == 0) {
 		LOG_WARNING("LOCALE: Could not read keyboard layout '%s' data",

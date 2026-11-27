@@ -135,6 +135,7 @@
 		#define NOMINMAX
 	#endif
 	#include <windows.h>
+#include "rwzfs/rwz.h"
 #endif
 
 #ifndef LOGURU_PTLS_NAMES

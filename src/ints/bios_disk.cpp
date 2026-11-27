@@ -15,6 +15,7 @@
 #include "gui/mapper.h"
 #include "hardware/memory.h"
 #include "utils/string_utils.h"
+#include "rwzfs/rwz.h"
 
 static const std::vector<DiskGeometry> disk_geometry_list = {
         { 160,  8, 1, 40, 0}, // SS/DD 5.25"
@@ -194,7 +195,7 @@ uint8_t imageDisk::Read_AbsoluteSector(uint32_t sectnum, void* data)
 		DOS_PerformDiskIoDelay(sector_size, type);
 	}
 
-	size_t ret   = fread(data, 1, sector_size, diskimg);
+	size_t ret   = rwz::stdio::fread(data, 1, sector_size, diskimg);
 	current_fpos = bytenum + ret;
 	last_action  = READ;
 
@@ -234,7 +235,7 @@ uint8_t imageDisk::Write_AbsoluteSector(uint32_t sectnum, void* data)
 		DOS_PerformDiskIoDelay(sector_size, type);
 	}
 
-	size_t ret   = fwrite(data, 1, sector_size, diskimg);
+	size_t ret   = rwz::stdio::fwrite(data, 1, sector_size, diskimg);
 	current_fpos = bytenum + ret;
 	last_action  = WRITE;
 
@@ -254,7 +255,7 @@ imageDisk::imageDisk(FILE* img_file, const char* img_name, uint32_t img_size_k,
           current_fpos(0),
           last_action(NONE)
 {
-	fseek(diskimg, 0, SEEK_SET);
+	rwz::stdio::fseek(diskimg, 0, SEEK_SET);
 	memset(diskname, 0, 512);
 	safe_strcpy(diskname, img_name);
 	if (!is_hdd) {

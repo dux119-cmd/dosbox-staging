@@ -6,6 +6,7 @@ add_library(decoders STATIC
   SDL_sound.c
   vorbis.c
   wav.c
+  ../rwzfs/integrations/sdl/rwz_sdl_io.cpp
 )
 
 target_include_directories(decoders SYSTEM PUBLIC ..)
@@ -21,7 +22,11 @@ endif()
 
 target_link_libraries(decoders
   PRIVATE
+  rwzfs
   SDL3::SDL3
 )
 
 disable_warnings(decoders)
+
+# target_link_libraries(decoders INTERFACE rwzfs)
+# target_link_libraries(decoders PRIVATE )

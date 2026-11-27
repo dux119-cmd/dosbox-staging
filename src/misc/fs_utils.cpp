@@ -8,12 +8,12 @@
 #include <cerrno>
 #include <chrono>
 #include <cstring>
-#include <fstream>
 
 #include "dos/dos.h"
 #include "dos/dos_system.h"
 #include "misc/std_filesystem.h"
 #include "utils/checks.h"
+#include "rwzfs/rwz.h"
 
 CHECK_NARROWING();
 
@@ -36,7 +36,7 @@ bool check_fseek(const char* module_name, const char* file_description,
 	        filename,
 	        strerror(errno));
 
-	fclose(stream);
+	rwz::stdio::fclose(stream);
 	stream = nullptr;
 	return false;
 }
@@ -44,7 +44,7 @@ bool check_fseek(const char* module_name, const char* file_description,
 bool is_dir(const std_fs::path& path)
 {
 	std::error_code ec = {};
-	return std_fs::is_directory(path, ec);
+	return rwz::fs::is_directory(path, ec);
 }
 
 bool is_hidden_by_host(const std_fs::path& pathname)
@@ -72,7 +72,7 @@ bool is_hidden_by_host(const std_fs::path& pathname)
 // return the lines from the given text file or an empty optional
 std::optional<std::vector<std::string>> get_lines(const std_fs::path &text_file)
 {
-	std::ifstream input_file(text_file, std::ios::binary);
+	rwz::stdio::file_istream input_file(text_file, std::ios::binary);
 	if (!input_file.is_open())
 		return {};
 
@@ -144,9 +144,9 @@ std_fs::path simplify_path(const std_fs::path& original_path) noexcept
 		assert(!ec); // we expect to depart this function with a clean code
 	};
 
-	keep_simplest(std_fs::absolute(original_path, ec));
-	keep_simplest(std_fs::canonical(original_path, ec));
-	keep_simplest(std_fs::proximate(original_path, ec));
+	keep_simplest(rwz::fs::absolute(original_path, ec));
+	keep_simplest(rwz::fs::canonical(original_path, ec));
+	keep_simplest(rwz::fs::proximate(original_path, ec));
 
 	return simplest_path;
 }
@@ -185,11 +185,11 @@ std::time_t to_time_t(const std_fs::file_time_type &fs_time)
 bool create_dir_if_not_exist(const std_fs::path& path)
 {
 	std::error_code ec = {};
-	if (std_fs::is_directory(path, ec)) {
+	if (rwz::fs::is_directory(path, ec)) {
 		return true;
 	}
 	ec.clear();
-	return std_fs::create_directory(path, ec);
+	return rwz::fs::create_directory(path, ec);
 }
 
 int64_t get_native_file_position(const NativeFileHandle handle)

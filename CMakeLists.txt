@@ -20,6 +20,11 @@ set(VCPKG_USE_HOST_TOOLS ON)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON CACHE BOOL
     "Generate compile_commands.json for use with LSPs")
 
+# VCPKG's overlays need to be setup before the project block, and we need to
+# add dwarfs's overlay because it's not available in VCPKG
+list(APPEND VCPKG_OVERLAY_PORTS "${CMAKE_CURRENT_SOURCE_DIR}/src/libs/rwzfs/vcpkg-ports")
+list(APPEND VCPKG_OVERLAY_TRIPLETS "${CMAKE_CURRENT_SOURCE_DIR}/src/libs/rwzfs/vcpkg-triplets")
+
 project(dosbox-staging
   LANGUAGES C CXX
   VERSION 0.84.0
@@ -499,7 +504,7 @@ endif()
 # SpeexDSP: vcpkg has no cmake config, only a .pc file
 pkg_check_modules(SPEEXDSP REQUIRED IMPORTED_TARGET speexdsp)
 
-add_executable(dosbox src/main.cpp src/dosbox.cpp)
+add_executable(dosbox src/main.cpp src/dosbox.cpp src/archive/archive_cli.cpp)
 if (OPT_DEBUGGER)
   set_target_properties(dosbox PROPERTIES OUTPUT_NAME dosbox_with_debugger)
 endif()
@@ -582,6 +587,7 @@ target_link_libraries(dosboxcommon PRIVATE
 
 target_link_libraries(dosbox PRIVATE
   dosboxcommon
+  rwzfs
   SDL3::Headers
 )
 

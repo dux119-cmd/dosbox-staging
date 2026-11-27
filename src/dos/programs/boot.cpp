@@ -23,6 +23,7 @@
 #include "more_output.h"
 #include "utils/fs_utils.h"
 #include "utils/string_utils.h"
+#include "rwzfs/rwz.h"
 
 FILE* BOOT::getFSFile_mounted(const char* filename, uint32_t* ksize,
                               uint32_t* bsize, uint8_t* error)
@@ -57,9 +58,9 @@ FILE* BOOT::getFSFile_mounted(const char* filename, uint32_t* ksize,
 			return nullptr;
 		}
 
-		*ksize = (ftell(tmpfile) / 1024);
-		*bsize = ftell(tmpfile);
-		fclose(tmpfile);
+		*ksize = (rwz::stdio::ftell(tmpfile) / 1024);
+		*bsize = rwz::stdio::ftell(tmpfile);
+		rwz::stdio::fclose(tmpfile);
 
 		tmpfile = ldp->GetHostFilePtr(fullname, "rb+");
 		if (tmpfile == nullptr) {
@@ -89,14 +90,14 @@ FILE* BOOT::getFSFile(const char* filename, uint32_t* ksize, uint32_t* bsize,
 		return tmpfile;
 	// File not found on mounted filesystem. Try regular filesystem
 	const auto filename_s = resolve_home(filename).string();
-	tmpfile = fopen(filename_s.c_str(), "rb+");
+	tmpfile = rwz::stdio::fopen(filename_s.c_str(), "rb+");
 
 	// Used for logging in check_fseek()
 	constexpr auto ModuleName = "BOOT";
 	constexpr auto FileDescription = "image";
 
 	if (!tmpfile) {
-		if ((tmpfile = fopen(filename_s.c_str(), "rb"))) {
+		if ((tmpfile = rwz::stdio::fopen(filename_s.c_str(), "rb"))) {
 			// File exists; So can't be opened in correct mode =>
 			// error 2
 			//				fclose(tmpfile);
@@ -105,8 +106,8 @@ FILE* BOOT::getFSFile(const char* filename, uint32_t* ksize, uint32_t* bsize,
 			if (!check_fseek(ModuleName, FileDescription, filename, tmpfile, 0L, SEEK_END)) {
 				return nullptr;
 			}
-			*ksize = (ftell(tmpfile) / 1024);
-			*bsize = ftell(tmpfile);
+			*ksize = (rwz::stdio::ftell(tmpfile) / 1024);
+			*bsize = rwz::stdio::ftell(tmpfile);
 			return tmpfile;
 		}
 		// Give the delayed errormessages from the mounted variant (or
@@ -120,8 +121,8 @@ FILE* BOOT::getFSFile(const char* filename, uint32_t* ksize, uint32_t* bsize,
 	if (!check_fseek(ModuleName, FileDescription, filename, tmpfile, 0L, SEEK_END)) {
 		return nullptr;
 	}
-	*ksize = (ftell(tmpfile) / 1024);
-	*bsize = ftell(tmpfile);
+	*ksize = (rwz::stdio::ftell(tmpfile) / 1024);
+	*bsize = rwz::stdio::ftell(tmpfile);
 	return tmpfile;
 }
 
@@ -297,11 +298,11 @@ void BOOT::Run(void)
 					return;
 				}
 				const auto rom_bytes_expected = rombytesize_1 - 0x200;
-				const auto rom_bytes_read = fread(
+				const auto rom_bytes_read = rwz::stdio::fread(
 				        rombuf, 1, rom_bytes_expected, usefile_1);
 				if (rom_bytes_read < rom_bytes_expected) {
 					LOG_ERR("BOOT: Failed to read sufficient cartridge data");
-					fclose(usefile_1);
+					rwz::stdio::fclose(usefile_1);
 					return;
 				}
 				// Null-terminate the buffer
@@ -388,21 +389,21 @@ void BOOT::Run(void)
 				if (!check_fseek("BOOT", "system ROM", rom_filename, tfile, 0x3000L, SEEK_SET)) {
 					return;
 				}
-				auto drd = (uint32_t)fread(rombuf, 1, 0xb000, tfile);
+				auto drd = (uint32_t)rwz::stdio::fread(rombuf, 1, 0xb000, tfile);
 				if (drd == 0xb000) {
 					for (i = 0; i < 0xb000; i++)
 						phys_writeb(0xf3000 + i, rombuf[i]);
 				}
-				fclose(tfile);
+				rwz::stdio::fclose(tfile);
 			}
 
 			if (usefile_2 != nullptr) {
 				if (!check_fseek(ModuleName, FileDescription, temp_line.c_str(), usefile_2, 0x0L, SEEK_SET)) {
 					return;
 				}
-				if (fread(rombuf, 1, 0x200, usefile_2) < 0x200) {
+				if (rwz::stdio::fread(rombuf, 1, 0x200, usefile_2) < 0x200) {
 					LOG_MSG("Failed to read sufficient ROM data");
-					fclose(usefile_2);
+					rwz::stdio::fclose(usefile_2);
 					return;
 				}
 
@@ -412,10 +413,10 @@ void BOOT::Run(void)
 				if (!check_fseek(ModuleName, FileDescription, temp_line.c_str(), usefile_2, 0x200L, SEEK_SET)) {
 					return;
 				}
-				if (fread(rombuf, 1, rombytesize_2 - 0x200, usefile_2) <
+				if (rwz::stdio::fread(rombuf, 1, rombytesize_2 - 0x200, usefile_2) <
 				    rombytesize_2 - 0x200) {
 					LOG_MSG("Failed to read sufficient ROM data");
-					fclose(usefile_2);
+					rwz::stdio::fclose(usefile_2);
 					return;
 				}
 
@@ -431,9 +432,9 @@ void BOOT::Run(void)
 			if (!check_fseek(ModuleName, FileDescription, temp_line.c_str(), usefile_1, 0x0L, SEEK_SET)) {
 				return;
 			}
-			if (fread(rombuf, 1, 0x200, usefile_1) < 0x200) {
+			if (rwz::stdio::fread(rombuf, 1, 0x200, usefile_1) < 0x200) {
 				LOG_MSG("Failed to read sufficient cartridge data");
-				fclose(usefile_1);
+				rwz::stdio::fclose(usefile_1);
 				return;
 			}
 
@@ -443,10 +444,10 @@ void BOOT::Run(void)
 			if (!check_fseek(ModuleName, FileDescription, temp_line.c_str(), usefile_1, 0x200L, SEEK_SET)) {
 				return;
 			}
-			if (fread(rombuf, 1, rombytesize_1 - 0x200, usefile_1) <
+			if (rwz::stdio::fread(rombuf, 1, rombytesize_1 - 0x200, usefile_1) <
 			    rombytesize_1 - 0x200) {
 				LOG_MSG("Failed to read sufficient cartridge data");
-				fclose(usefile_1);
+				rwz::stdio::fclose(usefile_1);
 				return;
 			}
 			// fclose(usefile_1); //usefile_1 is in diskSwap

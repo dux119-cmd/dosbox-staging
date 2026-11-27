@@ -28,6 +28,7 @@
 
 // must be included after dosbox_config.h
 #include <SDL3/SDL.h>
+#include "rwzfs/rwz.h"
 
 CHECK_NARROWING();
 

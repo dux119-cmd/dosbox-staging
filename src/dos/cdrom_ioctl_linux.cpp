@@ -16,6 +16,7 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <unistd.h>
+#include "rwzfs/rwz.h"
 
 CDROM_Interface_Ioctl::~CDROM_Interface_Ioctl()
 {

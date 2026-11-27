@@ -430,7 +430,7 @@ typedef union
 static FILE * stb_p_fopen(const char *filename, const char *mode)
 {
    FILE *f;
-   if (0 == fopen_s(&f, filename, mode))
+   if (0 == rwz::stdio::fopen_s(&f, filename, mode))
       return f;
    else
       return NULL;
@@ -438,7 +438,7 @@ static FILE * stb_p_fopen(const char *filename, const char *mode)
 static FILE * stb_p_wfopen(const wchar_t *filename, const wchar_t *mode)
 {
    FILE *f;
-   if (0 == _wfopen_s(&f, filename, mode))
+   if (0 == rwz::stdio::wfopen_s(&f, filename, mode))
       return f;
    else
       return NULL;
@@ -1205,7 +1205,7 @@ void stb_(char *s, ...)
          vfprintf(f, s, a);
          va_end(a);
          fputs("\n", f);
-         fclose(f);
+         rwz::stdio::fclose(f);
       }
    }
 }
@@ -1219,7 +1219,7 @@ void stb_append_to_file(char *filename, char *s, ...)
       vfprintf(f, s, a);
       va_end(a);
       fputs("\n", f);
-      fclose(f);
+      rwz::stdio::fclose(f);
    }
 }
 
@@ -5217,14 +5217,14 @@ STBF *stb_tfopen(char *filename, char *mode)
    FILE *f = stb_p_fopen(filename, mode);
    if (!f) return NULL;
    z = (STBF *) malloc(sizeof(*z));
-   if (!z) { fclose(f); return NULL; }
+   if (!z) { rwz::stdio::fclose(f); return NULL; }
    z->base_file = f;
    if (!strcmp(mode, "rb") || !strcmp(mode, "wb")) {
       z->buffer_size = 4096;
       z->buffer_off = z->buffer_size;
       z->buffer_left = 0;
       z->buffer = malloc(z->buffer_size);
-      if (!z->buffer) { free(z); fclose(f); return NULL; }
+      if (!z->buffer) { free(z); rwz::stdio::fclose(f); return NULL; }
    } else {
       z->buffer = 0;
       z->buffer_size = 0;
@@ -5252,7 +5252,7 @@ int stb_tfread(void *data, size_t len, size_t count, STBF *f)
       z->buffer_left=0;
 
       if (total-done > (z->buffer_size >> 1)) {
-         done += fread(out
+         done += rwz::stdio::fread(out
       }
    }
 }
@@ -5260,7 +5260,7 @@ int stb_tfread(void *data, size_t len, size_t count, STBF *f)
 
 void stb_fwrite32(FILE *f, stb_uint32 x)
 {
-   fwrite(&x, 4, 1, f);
+   rwz::stdio::fwrite(&x, 4, 1, f);
 }
 
 #if defined(_WIN32)
@@ -5274,7 +5274,7 @@ int stb_fexists(char *filename)
    struct stb__stat buf;
    return stb__windows(
              _wstat((const wchar_t *)stb__from_utf8(filename), &buf),
-               stat(filename,&buf)
+               rwz::posix::stat(filename,&buf)
           ) == 0;
 }
 
@@ -5283,7 +5283,7 @@ time_t stb_ftimestamp(char *filename)
    struct stb__stat buf;
    if (stb__windows(
              _wstat((const wchar_t *)stb__from_utf8(filename), &buf),
-               stat(filename,&buf)
+               rwz::posix::stat(filename,&buf)
           ) == 0)
    {
       return buf.st_mtime;
@@ -5295,10 +5295,10 @@ time_t stb_ftimestamp(char *filename)
 size_t  stb_filelen(FILE *f)
 {
    long len, pos;
-   pos = ftell(f);
-   fseek(f, 0, SEEK_END);
-   len = ftell(f);
-   fseek(f, pos, SEEK_SET);
+   pos = rwz::stdio::ftell(f);
+   rwz::stdio::fseek(f, 0, SEEK_END);
+   len = rwz::stdio::ftell(f);
+   rwz::stdio::fseek(f, pos, SEEK_SET);
    return (size_t) len;
 }
 
@@ -5310,7 +5310,7 @@ void *stb_file(char *filename, size_t *length)
    if (!f) return NULL;
    len = stb_filelen(f);
    buffer = (char *) malloc(len+2); // nul + extra
-   len2 = fread(buffer, 1, len, f);
+   len2 = rwz::stdio::fread(buffer, 1, len, f);
    if (len2 == len) {
       if (length) *length = len;
       buffer[len] = 0;
@@ -5318,7 +5318,7 @@ void *stb_file(char *filename, size_t *length)
       free(buffer);
       buffer = NULL;
    }
-   fclose(f);
+   rwz::stdio::fclose(f);
    return buffer;
 }
 
@@ -5330,7 +5330,7 @@ int stb_filewrite(char *filename, void *data, size_t length)
       size_t remaining = length;
       while (remaining > 0) {
          size_t len2 = remaining > 65536 ? 65536 : remaining;
-         size_t len3 = fwrite(data_ptr, 1, len2, f);
+         size_t len3 = rwz::stdio::fwrite(data_ptr, 1, len2, f);
          if (len2 != len3) {
             fprintf(stderr, "Failed while writing %s\n", filename);
             break;
@@ -5356,9 +5356,9 @@ void *  stb_file_max(char *filename, size_t *length)
    if (!f) return NULL;
    maxlen = *length;
    buffer = (char *) malloc(maxlen+1);
-   len = fread(buffer, 1, maxlen, f);
+   len = rwz::stdio::fread(buffer, 1, maxlen, f);
    buffer[len] = 0;
-   fclose(f);
+   rwz::stdio::fclose(f);
    *length = len;
    return buffer;
 }
@@ -5372,9 +5372,9 @@ char ** stb_stringfile(char *filename, int *plen)
    if (!f) return NULL;
    len = stb_filelen(f);
    buffer = (char *) malloc(len+1);
-   len = fread(buffer, 1, len, f);
+   len = rwz::stdio::fread(buffer, 1, len, f);
    buffer[len] = 0;
-   fclose(f);
+   rwz::stdio::fclose(f);
 
    // two passes through: first time count lines, second time set them
    for (i=0; i < 2; ++i) {
@@ -5487,7 +5487,7 @@ int stb_fullpath(char *abs, int abs_size, char *rel)
       return STB_TRUE;
    } else {
       int n;
-      getcwd(abs, abs_size);
+      rwz::posix::getcwd(abs, abs_size);
       n = strlen(abs);
       if (n+(int) strlen(rel)+2 <= abs_size) {
          abs[n] = '/';
@@ -5506,8 +5506,8 @@ static int stb_fcmp_core(FILE *f, FILE *g)
    int n1,n2, res=0;
 
    while (1) {
-      n1 = (int) fread(buf1, 1, sizeof(buf1), f);
-      n2 = (int) fread(buf2, 1, sizeof(buf2), g);
+      n1 = (int) rwz::stdio::fread(buf1, 1, sizeof(buf1), f);
+      n2 = (int) rwz::stdio::fread(buf2, 1, sizeof(buf2), g);
       res = memcmp(buf1,buf2,stb_min(n1,n2));
       if (res)
          break;
@@ -5519,8 +5519,8 @@ static int stb_fcmp_core(FILE *f, FILE *g)
          break;
    }
 
-   fclose(f);
-   fclose(g);
+   rwz::stdio::fclose(f);
+   rwz::stdio::fclose(g);
    return res;
 }
 
@@ -5530,9 +5530,9 @@ int stb_fcmp(char *s1, char *s2)
    FILE *g = stb__fopen(s2, "rb");
 
    if (f == NULL || g == NULL) {
-      if (f) fclose(f);
+      if (f) rwz::stdio::fclose(f);
       if (g) {
-         fclose(g);
+         rwz::stdio::fclose(g);
          return STB_TRUE;
       }
       return f != NULL;
@@ -5547,15 +5547,15 @@ int stb_feq(char *s1, char *s2)
    FILE *g = stb__fopen(s2, "rb");
 
    if (f == NULL || g == NULL) {
-      if (f) fclose(f);
-      if (g) fclose(g);
+      if (f) rwz::stdio::fclose(f);
+      if (g) rwz::stdio::fclose(g);
       return f == g;
    }
 
    // feq is faster because it shortcuts if they're different length
    if (stb_filelen(f) != stb_filelen(g)) {
-      fclose(f);
-      fclose(g);
+      rwz::stdio::fclose(f);
+      rwz::stdio::fclose(g);
       return 0;
    }
 
@@ -5603,15 +5603,15 @@ static FILE *stb__open_temp_file(char *temp_name, char *src_name, const char *mo
    {
       stb_p_strcpy_s(temp_name+p, 65536, "stmpXXXXXX");
       #ifdef __MINGW32__
-         int fd = open(stb_p_mktemp(temp_name), O_RDWR);
+         int fd = rwz::posix::open(stb_p_mktemp(temp_name), O_RDWR);
       #else
          int fd = mkstemp(temp_name);
       #endif
       if (fd == -1) return NULL;
       f = fdopen(fd, mode);
       if (f == NULL) {
-         unlink(temp_name);
-         close(fd);
+         rwz::posix::unlink(temp_name);
+         rwz::posix::close(fd);
          return NULL;
       }
    }
@@ -5640,7 +5640,7 @@ FILE *  stb_fopen(char *filename, const char *mode)
    f = stb__open_temp_file(temp_full, name_full, mode);
    if (f != NULL) {
       stb__file_data *d = (stb__file_data *) malloc(sizeof(*d));
-      if (!d) { assert(0);  /* NOTREACHED */fclose(f); return NULL; }
+      if (!d) { assert(0);  /* NOTREACHED */rwz::stdio::fclose(f); return NULL; }
       if (stb__files == NULL) stb__files = stb_ptrmap_create();
       d->temp_name = stb_p_strdup(temp_full);
       d->name      = stb_p_strdup(name_full);
@@ -5662,7 +5662,7 @@ int     stb_fclose(FILE *f, int keep)
    if (ferror(f))
       keep = stb_keep_no;
 
-   fclose(f);
+   rwz::stdio::fclose(f);
 
    if (stb__files && stb_ptrmap_remove(stb__files, f, (void **) &d)) {
       if (stb__files->count == 0) {
@@ -5694,10 +5694,10 @@ int     stb_fclose(FILE *f, int keep)
          FILE *dummy = stb__open_temp_file(preserved_old_file, d->name, "wb");
          if (dummy != NULL) {
             // we don't actually want the open file
-            fclose(dummy);
+            rwz::stdio::fclose(dummy);
 
             // discard what we just created
-            remove(preserved_old_file);  // if this fails, there's nothing we can do, and following logic handles it as best as possible anyway
+            rwz::stdio::remove(preserved_old_file);  // if this fails, there's nothing we can do, and following logic handles it as best as possible anyway
 
             // move the existing file to the preserved name
             if (0 != stb_rename(d->name, preserved_old_file)) {  // 0 on success
@@ -5717,7 +5717,7 @@ int     stb_fclose(FILE *f, int keep)
                   ok = STB_TRUE;
 
                   // 'filename -> new file' has always been the goal, so clean up
-                  remove(preserved_old_file); // nothing to be done if it fails
+                  rwz::stdio::remove(preserved_old_file); // nothing to be done if it fails
                } else {
                   // couldn't rename, so try renaming preserved file back
 
@@ -5762,7 +5762,7 @@ int stb_copyfile(char *src, char *dest)
    // open file for writing
    g = stb__fopen(dest, "wb");
    if (g == NULL) {
-      fclose(f);
+      rwz::stdio::fclose(f);
       return STB_FALSE;
    }
 
@@ -5773,16 +5773,16 @@ int stb_copyfile(char *src, char *dest)
    }
 
    while (!feof(f)) {
-      size_t n = fread(buffer, 1, buf_size, f);
+      size_t n = rwz::stdio::fread(buffer, 1, buf_size, f);
       if (n != 0)
-         fwrite(buffer, 1, n, g);
+         rwz::stdio::fwrite(buffer, 1, n, g);
    }
 
-   fclose(f);
+   rwz::stdio::fclose(f);
    if (buffer != raw_buffer)
       free(buffer);
 
-   fclose(g);
+   rwz::stdio::fclose(g);
    return STB_TRUE;
 }
 
@@ -5951,7 +5951,7 @@ void stb_fput_string(FILE *f, char *s)
 {
    size_t len = strlen(s);
    stb_fput_varlenu(f, (unsigned int) len);
-   fwrite(s, 1, len, f);
+   rwz::stdio::fwrite(s, 1, len, f);
 }
 
 // inverse of the above algorithm
@@ -5961,7 +5961,7 @@ char *stb_fget_string(FILE *f, void *p)
    int len = stb_fget_varlenu(f);
    if (len > 4096) return NULL;
    s = p ? stb_malloc_string(p, len+1) : (char *) malloc(len+1);
-   fread(s, 1, len, f);
+   rwz::stdio::fread(s, 1, len, f);
    s[len] = 0;
    return s;
 }
@@ -6165,13 +6165,13 @@ static char **readdir_raw(char *dir, int return_subdirs, char *mask)
       ws = stb__from_utf8(buffer);
       z = _wfindfirst((const wchar_t *)ws, &data);
    #else
-      z = opendir(dir);
+      z = rwz::posix::opendir(dir);
    #endif
 
    if (z != none) {
       int nonempty = STB_TRUE;
       #ifndef _MSC_VER
-      struct dirent *data = readdir(z);
+      struct dirent *data = rwz::posix::readdir(z);
       nonempty = (data != NULL);
       #endif
 
@@ -6210,13 +6210,13 @@ static char **readdir_raw(char *dir, int return_subdirs, char *mask)
          #ifdef _MSC_VER
          while (0 == _wfindnext(z, &data));
          #else
-         while ((data = readdir(z)) != NULL);
+         while ((data = rwz::posix::readdir(z)) != NULL);
          #endif
       }
       #ifdef _MSC_VER
          _findclose(z);
       #else
-         closedir(z);
+         rwz::posix::closedir(z);
       #endif
    }
    return results;
@@ -6591,7 +6591,7 @@ int stb_sha1_file(stb_uchar output[20], char *file)
    h[4] = 0xc3d2e1f0;
 
    for(;;) {
-      size_t n = fread(buffer, 1, 64, f);
+      size_t n = rwz::stdio::fread(buffer, 1, 64, f);
       if (n == 64) {
          stb__sha1(buffer, h);
          length += n;
@@ -6627,7 +6627,7 @@ int stb_sha1_file(stb_uchar output[20], char *file)
          break;
       }
    }
-   fclose(f);
+   rwz::stdio::fclose(f);
 
    for (i=0; i < 5; ++i) {
       output[i*4 + 0] = h[i] >> 24;
@@ -6885,15 +6885,15 @@ void stb_cfg_close(stb_cfg *z)
    if (z->f) {
       int i;
       // write the file out
-      fwrite(stb__cfg_sig, 12, 1, z->f);
+      rwz::stdio::fwrite(stb__cfg_sig, 12, 1, z->f);
       for (i=0; i < stb_arr_len(z->data); ++i) {
          stb_int16 n = (stb_int16) strlen(z->data[i].key)+1;
-         fwrite(&n, 2, 1, z->f);
-         fwrite(z->data[i].key, n, 1, z->f);
-         fwrite(&z->data[i].value_len, 4, 1, z->f);
-         fwrite(z->data[i].value, z->data[i].value_len, 1, z->f);
+         rwz::stdio::fwrite(&n, 2, 1, z->f);
+         rwz::stdio::fwrite(z->data[i].key, n, 1, z->f);
+         rwz::stdio::fwrite(&z->data[i].value_len, 4, 1, z->f);
+         rwz::stdio::fwrite(z->data[i].value, z->data[i].value_len, 1, z->f);
       }
-      fclose(z->f);
+      rwz::stdio::fclose(z->f);
    }
    stb_arr_free(z->data);
    stb_free(z);
@@ -7048,8 +7048,8 @@ static void stb__dirtree_save_db(char *filename, stb_dirtree *data, char *root)
    FILE *f = stb_p_fopen(filename, "wb");
    if (!f) return;
 
-   fwrite(stb__signature, sizeof(stb__signature), 1, f);
-   fwrite(info, strlen(info)+1, 1, f);
+   rwz::stdio::fwrite(stb__signature, sizeof(stb__signature), 1, f);
+   rwz::stdio::fwrite(info, strlen(info)+1, 1, f);
    // need to be slightly tricky and not write out NULLed directories, nor the root
 
    // build remapping table of all dirs we'll be writing out
@@ -7062,10 +7062,10 @@ static void stb__dirtree_save_db(char *filename, stb_dirtree *data, char *root)
       }
    }
 
-   fwrite(&num_dirs_final, 4, 1, f);
+   rwz::stdio::fwrite(&num_dirs_final, 4, 1, f);
    for (i=0; i < stb_arr_len(data->dirs); ++i) {
       if (remap[i] >= 0) {
-         fwrite(&data->dirs[i].last_modified, 4, 1, f);
+         rwz::stdio::fwrite(&data->dirs[i].last_modified, 4, 1, f);
          stb_fput_string(f, data->dirs[i].path);
       }
    }
@@ -7075,17 +7075,17 @@ static void stb__dirtree_save_db(char *filename, stb_dirtree *data, char *root)
       if (remap[data->files[i].dir] >= 0 && data->files[i].name)
          ++num_files_final;
 
-   fwrite(&num_files_final, 4, 1, f);
+   rwz::stdio::fwrite(&num_files_final, 4, 1, f);
    for (i=0; i < stb_arr_len(data->files); ++i) {
       if (remap[data->files[i].dir] >= 0 && data->files[i].name) {
          stb_fput_ranged(f, remap[data->files[i].dir], 0, num_dirs_final);
          stb_fput_varlen64(f, data->files[i].size);
-         fwrite(&data->files[i].last_modified, 4, 1, f);
+         rwz::stdio::fwrite(&data->files[i].last_modified, 4, 1, f);
          stb_fput_string(f, data->files[i].name);
       }
    }
 
-   fclose(f);
+   rwz::stdio::fclose(f);
 }
 
 // note: stomps any existing data, rather than appending
@@ -7099,25 +7099,25 @@ static void stb__dirtree_load_db(char *filename, stb_dirtree *data, char *dir)
 
    data->string_pool = stb_malloc(0,1);
 
-   fread(sig, sizeof(stb__signature), 1, f);
-   if (memcmp(stb__signature, sig, sizeof(stb__signature))) { fclose(f); return; }
-   if (!fread(sig, strlen(dir)+1, 1, f))                    { fclose(f); return; }
-   if (stb_stricmp(sig,dir))                                { fclose(f); return; }
+   rwz::stdio::fread(sig, sizeof(stb__signature), 1, f);
+   if (memcmp(stb__signature, sig, sizeof(stb__signature))) { rwz::stdio::fclose(f); return; }
+   if (!rwz::stdio::fread(sig, strlen(dir)+1, 1, f))                    { rwz::stdio::fclose(f); return; }
+   if (stb_stricmp(sig,dir))                                { rwz::stdio::fclose(f); return; }
 
    // we can just read them straight in, because they're guaranteed to be valid
-   fread(&n, 4, 1, f);
+   rwz::stdio::fread(&n, 4, 1, f);
    stb_arr_setlen(data->dirs, n);
    for(i=0; i < stb_arr_len(data->dirs); ++i) {
-      fread(&data->dirs[i].last_modified, 4, 1, f);
+      rwz::stdio::fread(&data->dirs[i].last_modified, 4, 1, f);
       data->dirs[i].path = stb_fget_string(f, data->string_pool);
       if (data->dirs[i].path == NULL) goto bail;
    }
-   fread(&n, 4, 1, f);
+   rwz::stdio::fread(&n, 4, 1, f);
    stb_arr_setlen(data->files, n);
    for (i=0; i < stb_arr_len(data->files); ++i) {
       data->files[i].dir  = stb_fget_ranged(f, 0, stb_arr_len(data->dirs));
       data->files[i].size = stb_fget_varlen64(f);
-      fread(&data->files[i].last_modified, 4, 1, f);
+      rwz::stdio::fread(&data->files[i].last_modified, 4, 1, f);
       data->files[i].name = stb_fget_string(f, data->string_pool);
       if (data->files[i].name == NULL) goto bail;
    }
@@ -7127,7 +7127,7 @@ static void stb__dirtree_load_db(char *filename, stb_dirtree *data, char *dir)
          stb_arr_free(data->dirs);
          stb_arr_free(data->files);
    }
-   fclose(f);
+   rwz::stdio::fclose(f);
 }
 
 FILE *hlog;
@@ -10183,7 +10183,7 @@ static void stb__introspect_compute(char *path, char *file)
       fprintf(f, "  stb_introspect_%s,\n", introspect_list[i]);
    fputs(" };\n", f);
    fputs("#endif\n", f);
-   fclose(f);
+   rwz::stdio::fclose(f);
 }
 
 static stb_info_struct *stb__introspect_info;
@@ -10468,12 +10468,12 @@ char *stb_decompress_fromfile(char *filename, unsigned int *len)
    char *q;
    unsigned char *p;
    FILE *f = stb_p_fopen(filename, "rb");   if (f == NULL) return NULL;
-   fseek(f, 0, SEEK_END);
-   n = ftell(f);
-   fseek(f, 0, SEEK_SET);
+   rwz::stdio::fseek(f, 0, SEEK_END);
+   n = rwz::stdio::ftell(f);
+   rwz::stdio::fseek(f, 0, SEEK_SET);
    p = (unsigned char * ) malloc(n); if (p == NULL) return NULL;
-   fread(p, 1, n, f);
-   fclose(f);
+   rwz::stdio::fread(p, 1, n, f);
+   rwz::stdio::fclose(f);
    if (p == NULL) return NULL;
    if (p[0] != 0x57 || p[1] != 0xBc || p[2] || p[3]) { free(p); return NULL; }
    q = (char *) malloc(stb_decompress_length(p)+1);
@@ -10602,7 +10602,7 @@ static void outliterals(stb_uchar *in, ptrdiff_t numlit)
       memcpy(stb__out,in,numlit);
       stb__out += numlit;
    } else
-      fwrite(in, 1, numlit, stb__outfile);
+      rwz::stdio::fwrite(in, 1, numlit, stb__outfile);
 }
 
 static int stb__window = 0x40000; // 256K
@@ -10800,7 +10800,7 @@ int stb_compress_tofile(char *filename, char *input, unsigned int length)
    if (!stb_compress_inner((stb_uchar*)input, length))
       return 0;
 
-   fclose(stb__outfile);
+   rwz::stdio::fclose(stb__outfile);
 
    return stb__outbytes;
 }
@@ -10831,7 +10831,7 @@ static size_t stb_out_backpatch_id(void)
    if (stb__out)
       return (size_t) stb__out;
    else
-      return ftell(stb__outfile);
+      return rwz::stdio::ftell(stb__outfile);
 }
 
 static void stb_out_backpatch(size_t id, stb_uint value)
@@ -10840,10 +10840,10 @@ static void stb_out_backpatch(size_t id, stb_uint value)
    if (stb__out) {
       memcpy((void *) id, data, 4);
    } else {
-      stb_uint where = ftell(stb__outfile);
-      fseek(stb__outfile, (long) id, SEEK_SET);
-      fwrite(data, 4, 1, stb__outfile);
-      fseek(stb__outfile, where, SEEK_SET);
+      stb_uint where = rwz::stdio::ftell(stb__outfile);
+      rwz::stdio::fseek(stb__outfile, (long) id, SEEK_SET);
+      rwz::stdio::fwrite(data, 4, 1, stb__outfile);
+      rwz::stdio::fseek(stb__outfile, where, SEEK_SET);
    }
 }
 
@@ -11015,7 +11015,7 @@ void stb_compress_stream_end(int close)
 {
    stb_compress_streaming_end();
    if (close && stb__outfile) {
-      fclose(stb__outfile);
+      rwz::stdio::fclose(stb__outfile);
    }
 }
 
@@ -11087,17 +11087,17 @@ void stb_backpatch(stbfile *f, unsigned int tell, void *buffer, unsigned int len
 // FILE * implementation
 static int stb__fgetbyte(stbfile *f) { return fgetc(f->f); }
 static int stb__fputbyte(stbfile *f, int ch) { return fputc(ch, f->f)==0; }
-static unsigned int stb__fgetdata(stbfile *f, void *buffer, unsigned int len) { return (unsigned int) fread(buffer,1,len,f->f); }
-static unsigned int stb__fputdata(stbfile *f, void *buffer, unsigned int len) { return (unsigned int) fwrite(buffer,1,len,f->f); }
+static unsigned int stb__fgetdata(stbfile *f, void *buffer, unsigned int len) { return (unsigned int) rwz::stdio::fread(buffer,1,len,f->f); }
+static unsigned int stb__fputdata(stbfile *f, void *buffer, unsigned int len) { return (unsigned int) rwz::stdio::fwrite(buffer,1,len,f->f); }
 static unsigned int stb__fsize(stbfile *f) { return (unsigned int) stb_filelen(f->f); }
-static unsigned int stb__ftell(stbfile *f) { return (unsigned int) ftell(f->f); }
+static unsigned int stb__ftell(stbfile *f) { return (unsigned int) rwz::stdio::ftell(f->f); }
 static void stb__fbackpatch(stbfile *f, unsigned int where, void *buffer, unsigned int len)
 {
-   fseek(f->f, where, SEEK_SET);
-   fwrite(buffer, 1, len, f->f);
-   fseek(f->f, 0, SEEK_END);
+   rwz::stdio::fseek(f->f, where, SEEK_SET);
+   rwz::stdio::fwrite(buffer, 1, len, f->f);
+   rwz::stdio::fseek(f->f, 0, SEEK_END);
 }
-static void         stb__fclose(stbfile *f) { fclose(f->f); }
+static void         stb__fclose(stbfile *f) { rwz::stdio::fclose(f->f); }
 
 stbfile *stb_openf(FILE *f)
 {
@@ -11172,7 +11172,7 @@ stbfile *stb_open_inbuffer_free(void *buffer, unsigned int len)
 // version of stb_open, without the 'k' flag and utf8 support
 static void stb__fclose2(stbfile *f)
 {
-   fclose(f->f);
+   rwz::stdio::fclose(f->f);
 }
 
 stbfile *stb_open(char *filename, char *mode)
@@ -11570,6 +11570,7 @@ static void stb__wait(int n)
 // exactly the same (we don't define the security descriptor struct)
 // so if you want to include windows.h, make sure you do it first.
 #include <process.h>
+#include "rwzfs/rwz.h"
 
 #ifndef _WINDOWS_  // check windows.h guard
 #define STB__IMPORT   STB_EXTERN __declspec(dllimport)
@@ -11639,7 +11640,7 @@ static stb_thread stb_create_thread_raw(stb_thread_func f, void *d, volatile voi
 void          stb_destroy_thread(stb_thread t)   { TerminateThread(t,0); }
 stb_semaphore stb_sem_new(int maxv)                {return CreateSemaphoreA(NULL,0,maxv,NULL); }
 stb_semaphore stb_sem_new_extra(int maxv,int start){return CreateSemaphoreA(NULL,start,maxv,NULL); }
-void          stb_sem_delete(stb_semaphore s)    { if (s != NULL) CloseHandle(s); }
+void          stb_sem_delete(stb_semaphore s)    { if (s != NULL) rwz::win32::close_handle(s); }
 void          stb_sem_waitfor(stb_semaphore s)   { WaitForSingleObject(s, 0xffffffff); } // INFINITE
 void          stb_sem_release(stb_semaphore s)   { ReleaseSemaphore(s,1,NULL); }
 static void   stb__thread_sleep(int ms)          { Sleep(ms); }
@@ -12344,7 +12345,7 @@ static void * stb__io_task(void *p)
       if (!f)
          return stb__io_error(dc);
    } else {
-      f = fopen(dc->filename, "rb");
+      f = rwz::stdio::fopen(dc->filename, "rb");
       free(dc->filename);
       if (!f)
          return stb__io_error(dc);
@@ -12352,12 +12353,12 @@ static void * stb__io_task(void *p)
 
    len = dc->len;
    if (len < 0) {
-      fseek(f, 0, SEEK_END);
-      len = ftell(f) - dc->offset;
+      rwz::stdio::fseek(f, 0, SEEK_END);
+      len = rwz::stdio::ftell(f) - dc->offset;
    }
 
-   if (fseek(f, dc->offset, SEEK_SET)) {
-      fclose(f);
+   if (rwz::stdio::fseek(f, dc->offset, SEEK_SET)) {
+      rwz::stdio::fclose(f);
       return stb__io_error(dc);
    }
 
@@ -12366,13 +12367,13 @@ static void * stb__io_task(void *p)
    else {
       buf = (stb_uchar *) malloc(len);
       if (buf == NULL) {
-         fclose(f);
+         rwz::stdio::fclose(f);
          return stb__io_error(dc);
       }
    }
 
-   len = fread(buf, 1, len, f);
-   fclose(f);
+   len = rwz::stdio::fread(buf, 1, len, f);
+   rwz::stdio::fclose(f);
    if (dc->len_output) *dc->len_output = len;
    if (dc->result) *dc->result = buf;
    if (dc->flag) *dc->flag = 1;

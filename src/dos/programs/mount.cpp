@@ -26,6 +26,7 @@
 #include "utils/fs_utils.h"
 #include "utils/string_utils.h"
 #include <sys/stat.h>
+#include "rwzfs/rwz.h"
 
 #ifndef S_ISREG
 #define S_ISREG(m) (((m) & S_IFMT) == S_IFREG)
@@ -251,7 +252,7 @@ bool MOUNT::MountImageFat(MountParameters& params)
 
 		const auto sz = stdio_num_sectors(diskfile);
 		if (sz < 0) {
-			fclose(diskfile);
+			rwz::stdio::fclose(diskfile);
 			NOTIFY_DisplayWarning(Notification::Source::Console,
 			                      "MOUNT",
 			                      "PROGRAM_IMGMOUNT_INVALID_IMAGE");
@@ -262,8 +263,8 @@ bool MOUNT::MountImageFat(MountParameters& params)
 		uint8_t buf[512];
 
 		if (cross_fseeko(diskfile, 0L, SEEK_SET) != 0 ||
-		    fread(buf, sizeof(uint8_t), 512, diskfile) < 512) {
-			fclose(diskfile);
+		    rwz::stdio::fread(buf, sizeof(uint8_t), 512, diskfile) < 512) {
+			rwz::stdio::fclose(diskfile);
 
 			NOTIFY_DisplayWarning(Notification::Source::Console,
 			                      "MOUNT",
@@ -271,7 +272,7 @@ bool MOUNT::MountImageFat(MountParameters& params)
 			return false;
 		}
 
-		fclose(diskfile);
+		rwz::stdio::fclose(diskfile);
 
 		if ((buf[510] != 0x55) || (buf[511] != 0xaa)) {
 			NOTIFY_DisplayWarning(Notification::Source::Console,
@@ -492,7 +493,7 @@ bool MOUNT::MountImageRaw(MountParameters& params)
 
 	const auto sz = stdio_size_kb(new_disk);
 	if (sz < 0) {
-		fclose(new_disk);
+		rwz::stdio::fclose(new_disk);
 
 		NOTIFY_DisplayWarning(Notification::Source::Console,
 		                      "MOUNT",
@@ -509,7 +510,7 @@ bool MOUNT::MountImageRaw(MountParameters& params)
 	if (is_hdd && params.sizes[0] == 0 && params.sizes[1] == 0 &&
 	    params.sizes[2] == 0 && params.sizes[3] == 0) {
 
-		fclose(new_disk);
+		rwz::stdio::fclose(new_disk);
 
 		NOTIFY_DisplayWarning(Notification::Source::Console,
 		                      "MOUNT",
@@ -1115,14 +1116,14 @@ void MOUNT::ProcessPaths(const std::string first_path, MountParameters& params,
 
 	// Check first path on the host OS
 	struct stat test = {};
-	auto stat_ok     = (stat(path_arg_1.c_str(), &test) == 0);
+	auto stat_ok     = (rwz::posix::stat(path_arg_1.c_str(), &test) == 0);
 
 	// If not found on the host, check if it is a mounted DOS path
 	if (!stat_ok) {
 		const auto mapped_host_path = GetDosMappedHostPath(path_arg_1);
 
 		if (!mapped_host_path.empty() &&
-		    stat(mapped_host_path.c_str(), &test) == 0) {
+		    rwz::posix::stat(mapped_host_path.c_str(), &test) == 0) {
 			stat_ok = true;
 		}
 	}
@@ -1209,7 +1210,7 @@ void MOUNT::ProcessPaths(const std::string first_path, MountParameters& params,
 			    params.type == MountType::Directory) {
 				struct stat t2 = {};
 
-				if (stat(loop_final_path.c_str(), &t2) == 0 &&
+				if (rwz::posix::stat(loop_final_path.c_str(), &t2) == 0 &&
 				    S_ISREG(t2.st_mode)) {
 
 					auto ext = loop_final_path.substr(

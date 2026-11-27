@@ -12,7 +12,6 @@
 #include <chrono>
 #include <cmath>
 #include <cstdio>
-#include <fstream>
 #include <iostream>
 #include <iterator>
 #include <limits>
@@ -31,6 +30,7 @@
 #include "utils/fs_utils.h"
 #include "utils/math_utils.h"
 #include "utils/string_utils.h"
+#include "rwzfs/rwz.h"
 
 // String maximums, local to this file
 #define MAX_LINE_LENGTH 512
@@ -85,7 +85,7 @@ CDROM_Interface_Image::BinaryFile::BinaryFile(const std_fs::path &filename, bool
         : TrackFile(BYTES_PER_RAW_REDBOOK_FRAME),
           file(nullptr)
 {
-	file = new std::ifstream(filename, std::ios::in | std::ios::binary);
+	file = new rwz::stdio::file_istream(filename, std::ios::in | std::ios::binary);
 	// If new fails, an exception is generated and scope leaves this constructor
 	error = file->fail();
 }
@@ -1176,7 +1176,7 @@ static std::string dirname(char* file)
 }
 #endif
 
-static std::optional<MdsHeader> read_and_validate_mds_header(std::ifstream &file)
+static std::optional<MdsHeader> read_and_validate_mds_header(rwz::stdio::file_istream &file)
 {
 	const auto mds_header = read_mds_header(file);
 	if (!mds_header) {
@@ -1214,7 +1214,7 @@ static std::optional<MdsHeader> read_and_validate_mds_header(std::ifstream &file
 	return mds_header;
 }
 
-static std::optional<MdsSessionBlock> read_and_validate_mds_session_block(std::ifstream &file, const std::ifstream::pos_type pos)
+static std::optional<MdsSessionBlock> read_and_validate_mds_session_block(rwz::stdio::file_istream &file, const rwz::stdio::file_istream::pos_type pos)
 {
 	const auto session_block = read_mds_session_block(file, pos);
 	if (!session_block) {
@@ -1277,7 +1277,7 @@ static bool set_track_mode(CDROM_Interface_Image::Track &track, uint8_t mode)
 	return true;
 }
 
-static std_fs::path read_mdf_filename(std::ifstream &file, const MdsFooter footer)
+static std_fs::path read_mdf_filename(rwz::stdio::file_istream &file, const MdsFooter footer)
 {
 	file.seekg(footer.filename_offset);
 	if (file.fail()) {
@@ -1315,7 +1315,7 @@ static std_fs::path read_mdf_filename(std::ifstream &file, const MdsFooter foote
 bool CDROM_Interface_Image::LoadMdsFile(const char *mds_filename)
 {
 	const std_fs::path mds_path(to_native_path(mds_filename));
-	std::ifstream file(mds_path, std::ios::in | std::ios::binary);
+	rwz::stdio::file_istream file(mds_path, std::ios::in | std::ios::binary);
 
 	const auto mds_header = read_and_validate_mds_header(file);
 	if (!mds_header) {
@@ -1440,7 +1440,7 @@ bool CDROM_Interface_Image::LoadCueSheet(const char *cuefile)
 	char tmp[MAX_FILENAME_LENGTH];  // dirname can change its argument
 	safe_strcpy(tmp, cuefile);
 	std::string pathname(dirname(tmp));
-	std::ifstream in;
+	rwz::stdio::file_istream in;
 	in.open(to_native_path(cuefile), std::ios::in);
 	if (in.fail()) {
 		return false;

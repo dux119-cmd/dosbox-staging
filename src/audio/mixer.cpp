@@ -10,7 +10,6 @@
 #include <cstdint>
 #include <cstring>
 #include <optional>
-#include <sys/types.h>
 
 #include <speex/speex_resampler.h>
 

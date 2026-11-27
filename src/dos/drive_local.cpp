@@ -15,7 +15,6 @@
 #include <cstring>
 #include <ctime>
 #include <limits>
-#include <sys/types.h>
 
 #include "audio/disk_noise.h"
 #include "dos.h"
@@ -24,6 +23,7 @@
 #include "misc/cross.h"
 #include "utils/fs_utils.h"
 #include "utils/string_utils.h"
+#include "rwzfs/rwz.h"
 
 bool localDrive::FileIsReadOnly(const char* name)
 {
@@ -227,7 +227,7 @@ std::unique_ptr<DOS_File> localDrive::FileOpen(const char* name, uint8_t flags)
 
 FILE* localDrive::GetHostFilePtr(const char* const name, const char* const type)
 {
-	return fopen(MapDosToHostFilename(name).c_str(), type);
+	return rwz::stdio::fopen(MapDosToHostFilename(name).c_str(), type);
 }
 
 std::string localDrive::MapDosToHostFilename(const char* const dos_name)

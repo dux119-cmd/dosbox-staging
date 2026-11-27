@@ -31,6 +31,8 @@
 #include <utility> // declval, forward, move, pair, swap
 #include <vector> // vector
 
+#include "rwzfs/rwz.h"
+
 // #include <nlohmann/adl_serializer.hpp>
 //     __ _____ _____ _____
 //  __|  |   __|     |   | |  JSON for Modern C++
@@ -20300,6 +20302,7 @@ NLOHMANN_JSON_NAMESPACE_END
         #include <any>
     #endif
     #include <string_view>
+#include "rwzfs/rwz.h"
 #endif
 
 /*!

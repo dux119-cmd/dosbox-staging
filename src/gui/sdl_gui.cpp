@@ -4,12 +4,10 @@
 
 #include "private/sdl_gui.h"
 
-#include <cstdio>
 #include <cstdlib>
 #include <cstring>
 #include <filesystem>
 #include <memory>
-#include <sys/types.h>
 #include <unistd.h>
 
 #if C_DEBUGGER
@@ -50,6 +48,7 @@
 
 // must be included after dosbox_config.h
 #include <SDL3/SDL.h>
+#include "rwzfs/rwz.h"
 
 CHECK_NARROWING();
 
@@ -1333,7 +1332,7 @@ static bool check_kmsdrm_setting()
 {
 	// Do we have read access to the event subsystem
 	if (auto f = fopen("/dev/input/event0", "r"); f) {
-		fclose(f);
+		rwz::stdio::fclose(f);
 		return true;
 	}
 
@@ -1916,7 +1915,7 @@ static bool is_dosbox_package(const std::string& path)
 	std_fs::path pkg_path(path);
 
 	// Check if path exists and is a directory
-	if (!std_fs::is_directory(pkg_path, ec)) {
+	if (!rwz::fs::is_directory(pkg_path, ec)) {
 		return false;
 	}
 
@@ -1941,7 +1940,7 @@ static void handle_macos_dosbox_package_drop(const std::string& dropped_file_pat
 
 	// Convert to absolute path
 	std::error_code ec;
-	std_fs::path pkg_path = std_fs::absolute(dropped_file_path, ec);
+	std_fs::path pkg_path = rwz::fs::absolute(dropped_file_path, ec);
 	if (ec) {
 		LOG_WARNING("CONFIG: Failed to convert package path to absolute");
 		return;

@@ -823,6 +823,7 @@ plm_samples_t *plm_audio_decode(plm_audio_t *self);
 
 #include <string.h>
 #include <stdlib.h>
+#include "rwzfs/rwz.h"
 
 #ifndef TRUE
 #define TRUE 1
@@ -1425,7 +1426,7 @@ int16_t plm_buffer_read_vlc(plm_buffer_t *self, const plm_vlc_t *table);
 uint16_t plm_buffer_read_vlc_uint(plm_buffer_t *self, const plm_vlc_uint_t *table);
 
 plm_buffer_t *plm_buffer_create_with_filename(const char *filename) {
-	FILE *fh = fopen(filename, "rb");
+	FILE *fh = rwz::stdio::fopen(filename, "rb");
 	if (!fh) {
 		return nullptr;
 	}
@@ -1443,7 +1444,7 @@ plm_buffer_t *plm_buffer_create_with_file(FILE *fh, int close_when_done) {
 		// won't be able to close the FILE, for which it might normally
 		// be responsible, therefore we close it here too.
 		if (close_when_done) {
-			fclose(fh);
+			rwz::stdio::fclose(fh);
 		}
 		return nullptr;
 	}
@@ -1454,14 +1455,14 @@ plm_buffer_t *plm_buffer_create_with_file(FILE *fh, int close_when_done) {
 	self->discard_read_bytes = TRUE;
 	
 	assert(self->fh);
-	if (fseek(self->fh, 0, SEEK_END) != 0) {
+	if (rwz::stdio::fseek(self->fh, 0, SEEK_END) != 0) {
 		// buffer_destroy takes care of closing the file
 		plm_buffer_destroy(self);
 		return nullptr;
 	}
-	self->total_size = ftell(self->fh);
+	self->total_size = rwz::stdio::ftell(self->fh);
 
-	if (fseek(self->fh, 0, SEEK_SET) != 0) {
+	if (rwz::stdio::fseek(self->fh, 0, SEEK_SET) != 0) {
 		// buffer_destroy takes care of closing the file
 		plm_buffer_destroy(self);
 		return nullptr;
@@ -1534,7 +1535,7 @@ void plm_buffer_destroy(plm_buffer_t *self) {
 	}
 
 	if (self->fh && self->close_when_done) {
-		fclose(self->fh);
+		rwz::stdio::fclose(self->fh);
 	}
 	if (self->free_when_done) {
 		free(self->bytes);
@@ -1610,7 +1611,7 @@ void plm_buffer_seek(plm_buffer_t *self, size_t pos) {
 			(*self->seek_callback)(self, self->load_callback_user_data, pos);
 		else {
 			assert (self->fh);
-			if (fseek(self->fh, pos, SEEK_SET) != 0) {
+			if (rwz::stdio::fseek(self->fh, pos, SEEK_SET) != 0) {
 				// Don't trust the file's state if seeking failed
 				return;
 			}
@@ -1661,7 +1662,7 @@ void plm_buffer_load_file_callback(plm_buffer_t *self, void *user) {
 	}
 
 	size_t bytes_available = self->capacity - self->length;
-	size_t bytes_read = fread(self->bytes + self->length, 1, bytes_available, self->fh);
+	size_t bytes_read = rwz::stdio::fread(self->bytes + self->length, 1, bytes_available, self->fh);
 	self->length += bytes_read;
 
 	if (bytes_read == 0) {

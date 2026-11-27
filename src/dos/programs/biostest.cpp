@@ -13,6 +13,7 @@
 
 #include "dos/drives.h"
 #include "cpu/registers.h"
+#include "rwzfs/rwz.h"
 
 void BIOSTEST::Run(void) {
 	if (!(cmd->FindCommand(1, temp_line))) {
@@ -36,18 +37,18 @@ void BIOSTEST::Run(void) {
 			WriteOut("Can't open a file");
 			return;
 		}
-		fseek(tmpfile, 0L, SEEK_END);
-		if (ftell(tmpfile) > 64 * 1024) {
+		rwz::stdio::fseek(tmpfile, 0L, SEEK_END);
+		if (rwz::stdio::ftell(tmpfile) > 64 * 1024) {
 			WriteOut("BIOS File too large");
-			fclose(tmpfile);
+			rwz::stdio::fclose(tmpfile);
 			return;
 		}
-		fseek(tmpfile, 0L, SEEK_SET);
+		rwz::stdio::fseek(tmpfile, 0L, SEEK_SET);
 		uint8_t buffer[64 * 1024];
-		const auto bytes_read = fread(buffer, 1, sizeof(buffer), tmpfile);
+		const auto bytes_read = rwz::stdio::fread(buffer, 1, sizeof(buffer), tmpfile);
 		assert(bytes_read <= sizeof(buffer));
 
-		fclose(tmpfile);
+		rwz::stdio::fclose(tmpfile);
 
 		// Override regular DOSBox BIOS
 		const auto rom_base = PhysicalMake(0xf000, 0);

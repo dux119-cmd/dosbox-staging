@@ -30,6 +30,7 @@
 #include "dos/programs/more_output.h"
 #include "gui/mapper.h"
 #include "utils/math_utils.h"
+#include "rwzfs/rwz.h"
 
 // note: Reported ReelMagic driver version 2.21 seems to be the most common...
 static const uint8_t REELMAGIC_DRIVER_VERSION_MAJOR = 2;
@@ -255,12 +256,12 @@ class ReelMagic_MediaPlayerHostFile : public ReelMagic_MediaPlayerFile {
 	static uint32_t GetFileSize(FILE* const fp)
 	{
 		assert(fp); // we always expect a non-void pointer
-		if (fseek(fp, 0, SEEK_END) == -1)
+		if (rwz::stdio::fseek(fp, 0, SEEK_END) == -1)
 			throw RMException("Host File: fseek() failed: %s", strerror(errno));
-		const long tell_result = ftell(fp);
+		const long tell_result = rwz::stdio::ftell(fp);
 		if (tell_result == -1)
 			throw RMException("Host File: ftell() failed: %s", strerror(errno));
-		if (fseek(fp, 0, SEEK_SET) == -1)
+		if (rwz::stdio::fseek(fp, 0, SEEK_SET) == -1)
 			throw RMException("Host File: fseek() failed: %s", strerror(errno));
 		return (uint32_t)tell_result;
 	}
@@ -278,7 +279,7 @@ protected:
 
 	uint32_t Read(uint8_t* data, uint32_t amount) override
 	{
-		const size_t fread_result = fread(data, 1, amount, _fp);
+		const size_t fread_result = rwz::stdio::fread(data, 1, amount, _fp);
 		if ((fread_result == 0) && ferror(_fp))
 			throw RMException("Host File: fread() failed: %s", strerror(errno));
 		return (uint32_t)fread_result;
@@ -286,7 +287,7 @@ protected:
 
 	void Seek(uint32_t pos, uint32_t type) override
 	{
-		if (fseek(_fp, (long)pos, (type == DOS_SEEK_SET) ? SEEK_SET : SEEK_CUR) == -1)
+		if (rwz::stdio::fseek(_fp, (long)pos, (type == DOS_SEEK_SET) ? SEEK_SET : SEEK_CUR) == -1)
 			throw RMException("Host File: fseek() failed: %s", strerror(errno));
 	}
 
@@ -299,7 +300,7 @@ public:
 		assert(hostFilepath);
 		_fileName = std::string("HOST:") + hostFilepath;
 
-		_fp = fopen(hostFilepath, "rb");
+		_fp = rwz::stdio::fopen(hostFilepath, "rb");
 		if (!_fp) {
 			throw RMException("Host File: fopen(\"%s\")failed: %s",
 			                  hostFilepath,
@@ -311,7 +312,7 @@ public:
 	}
 	~ReelMagic_MediaPlayerHostFile() override
 	{
-		fclose(_fp);
+		rwz::stdio::fclose(_fp);
 	}
 };
 } // namespace

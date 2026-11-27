@@ -20,6 +20,7 @@
 #include <iostream>
 #include <set>
 #include <sstream>
+#include "rwzfs/rwz.h"
 
 CHECK_NARROWING();
 
@@ -350,7 +351,7 @@ AutoExecModule::AutoExecModule(Section* configuration)
 		std_fs::path path = argument;
 		bool is_directory = is_dir(path);
 		if (!is_directory) {
-			path         = std_fs::current_path() / path;
+			path         = rwz::fs::current_path() / path;
 			is_directory = is_dir(path);
 		}
 
@@ -609,7 +610,7 @@ static std::vector<std_fs::path> get_files_by_extension(
 {
 	std::vector<std_fs::path> paths = {};
 
-	for (const auto& entry : std_fs::directory_iterator(drive_path)) {
+	for (const auto& entry : rwz::fs::directory_iterator(drive_path)) {
 		if (entry.exists() && entry.is_regular_file()) {
 			const auto& path = entry.path();
 			std::string ext  = path.extension().string();

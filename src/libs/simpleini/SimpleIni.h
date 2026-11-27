@@ -3638,6 +3638,7 @@ public:
  * SI_NoCase class instead.
  */
 #include <mbstring.h>
+#include "rwzfs/rwz.h"
 template <class SI_CHAR> struct SI_NoCase {
   bool operator()(const SI_CHAR *pLeft, const SI_CHAR *pRight) const {
     if (sizeof(SI_CHAR) == sizeof(char)) {

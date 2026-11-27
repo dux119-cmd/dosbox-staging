@@ -8155,8 +8155,9 @@ static drflac* drflac_open_with_metadata_private(drflac_read_proc onRead, drflac
 #endif
 
 /* Errno */
-/* drflac_result_from_errno() is only used for fopen() and wfopen() so putting it inside DR_WAV_NO_STDIO for now. If something else needs this later we can move it out. */
+/* drflac_result_from_errno() is only used for rwz::stdio::fopen() and wfopen() so putting it inside DR_WAV_NO_STDIO for now. If something else needs this later we can move it out. */
 #include <errno.h>
+#include "rwzfs/rwz.h"
 static drflac_result drflac_result_from_errno(int e)
 {
     switch (e)
@@ -8576,18 +8577,18 @@ static drflac_result drflac_fopen(FILE** ppFile, const char* pFilePath, const ch
     }
 
 #if defined(_MSC_VER) && _MSC_VER >= 1400
-    err = fopen_s(ppFile, pFilePath, pOpenMode);
+    err = rwz::stdio::fopen_s(ppFile, pFilePath, pOpenMode);
     if (err != 0) {
         return drflac_result_from_errno(err);
     }
 #else
 #if defined(_WIN32) || defined(__APPLE__)
-    *ppFile = fopen(pFilePath, pOpenMode);
+    *ppFile = rwz::stdio::fopen(pFilePath, pOpenMode);
 #else
     #if defined(_FILE_OFFSET_BITS) && _FILE_OFFSET_BITS == 64 && defined(_LARGEFILE64_SOURCE)
-        *ppFile = fopen64(pFilePath, pOpenMode);
+        *ppFile = rwz::stdio::fopen(pFilePath, pOpenMode);
     #else
-        *ppFile = fopen(pFilePath, pOpenMode);
+        *ppFile = rwz::stdio::fopen(pFilePath, pOpenMode);
     #endif
 #endif
     if (*ppFile == NULL) {
@@ -8604,7 +8605,7 @@ static drflac_result drflac_fopen(FILE** ppFile, const char* pFilePath, const ch
 }
 
 /*
-_wfopen() isn't always available in all compilation environments.
+rwz::stdio::wfopen() isn't always available in all compilation environments.
 
     * Windows only.
     * MSVC seems to support it universally as far back as VC6 from what I can tell (haven't checked further back).
@@ -8612,7 +8613,7 @@ _wfopen() isn't always available in all compilation environments.
     * MinGW wraps it in !defined(__STRICT_ANSI__).
     * OpenWatcom wraps it in !defined(_NO_EXT_KEYS).
 
-This can be reviewed as compatibility issues arise. The preference is to use _wfopen_s() and _wfopen() as opposed to the wcsrtombs()
+This can be reviewed as compatibility issues arise. The preference is to use _wfopen_s() and rwz::stdio::wfopen() as opposed to the wcsrtombs()
 fallback, so if you notice your compiler not detecting this properly I'm happy to look at adding support.
 */
 #if defined(_WIN32)
@@ -8636,12 +8637,12 @@ static drflac_result drflac_wfopen(FILE** ppFile, const wchar_t* pFilePath, cons
     {
         /* Use _wfopen() on Windows. */
     #if defined(_MSC_VER) && _MSC_VER >= 1400
-        errno_t err = _wfopen_s(ppFile, pFilePath, pOpenMode);
+        errno_t err = rwz::stdio::wfopen_s(ppFile, pFilePath, pOpenMode);
         if (err != 0) {
             return drflac_result_from_errno(err);
         }
     #else
-        *ppFile = _wfopen(pFilePath, pOpenMode);
+        *ppFile = rwz::stdio::wfopen(pFilePath, pOpenMode);
         if (*ppFile == NULL) {
             return drflac_result_from_errno(errno);
         }
@@ -8651,7 +8652,7 @@ static drflac_result drflac_wfopen(FILE** ppFile, const wchar_t* pFilePath, cons
 #else
     /*
     Use fopen() on anything other than Windows. Requires a conversion. This is annoying because
-	fopen() is locale specific. The only real way I can think of to do this is with wcsrtombs(). Note
+	rwz::stdio::fopen() is locale specific. The only real way I can think of to do this is with wcsrtombs(). Note
 	that wcstombs() is apparently not thread-safe because it uses a static global mbstate_t object for
     maintaining state. I've checked this with -std=c89 and it works, but if somebody get's a compiler
 	error I'll look into improving compatibility.
@@ -8704,7 +8705,7 @@ static drflac_result drflac_wfopen(FILE** ppFile, const wchar_t* pFilePath, cons
             }
         }
 
-        *ppFile = fopen(pFilePathMB, pOpenModeMB);
+        *ppFile = rwz::stdio::fopen(pFilePathMB, pOpenModeMB);
 
         drflac__free_from_callbacks(pFilePathMB, pAllocationCallbacks);
     }
@@ -8722,14 +8723,14 @@ static drflac_result drflac_wfopen(FILE** ppFile, const wchar_t* pFilePath, cons
 
 static size_t drflac__on_read_stdio(void* pUserData, void* bufferOut, size_t bytesToRead)
 {
-    return fread(bufferOut, 1, bytesToRead, (FILE*)pUserData);
+    return rwz::stdio::fread(bufferOut, 1, bytesToRead, (FILE*)pUserData);
 }
 
 static drflac_bool32 drflac__on_seek_stdio(void* pUserData, int offset, drflac_seek_origin origin)
 {
     DRFLAC_ASSERT(offset >= 0);  /* <-- Never seek backwards. */
 
-    return fseek((FILE*)pUserData, offset, (origin == drflac_seek_origin_current) ? SEEK_CUR : SEEK_SET) == 0;
+    return rwz::stdio::fseek((FILE*)pUserData, offset, (origin == drflac_seek_origin_current) ? SEEK_CUR : SEEK_SET) == 0;
 }
 
 
@@ -8744,7 +8745,7 @@ DRFLAC_API drflac* drflac_open_file(const char* pFileName, const drflac_allocati
 
     pFlac = drflac_open(drflac__on_read_stdio, drflac__on_seek_stdio, (void*)pFile, pAllocationCallbacks);
     if (pFlac == NULL) {
-        fclose(pFile);
+        rwz::stdio::fclose(pFile);
         return NULL;
     }
 
@@ -8763,7 +8764,7 @@ DRFLAC_API drflac* drflac_open_file_w(const wchar_t* pFileName, const drflac_all
 
     pFlac = drflac_open(drflac__on_read_stdio, drflac__on_seek_stdio, (void*)pFile, pAllocationCallbacks);
     if (pFlac == NULL) {
-        fclose(pFile);
+        rwz::stdio::fclose(pFile);
         return NULL;
     }
 
@@ -8782,7 +8783,7 @@ DRFLAC_API drflac* drflac_open_file_with_metadata(const char* pFileName, drflac_
 
     pFlac = drflac_open_with_metadata_private(drflac__on_read_stdio, drflac__on_seek_stdio, onMeta, drflac_container_unknown, (void*)pFile, pUserData, pAllocationCallbacks);
     if (pFlac == NULL) {
-        fclose(pFile);
+        rwz::stdio::fclose(pFile);
         return pFlac;
     }
 
@@ -8801,7 +8802,7 @@ DRFLAC_API drflac* drflac_open_file_with_metadata_w(const wchar_t* pFileName, dr
 
     pFlac = drflac_open_with_metadata_private(drflac__on_read_stdio, drflac__on_seek_stdio, onMeta, drflac_container_unknown, (void*)pFile, pUserData, pAllocationCallbacks);
     if (pFlac == NULL) {
-        fclose(pFile);
+        rwz::stdio::fclose(pFile);
         return pFlac;
     }
 
@@ -8953,7 +8954,7 @@ DRFLAC_API void drflac_close(drflac* pFlac)
     was used by looking at the callbacks.
     */
     if (pFlac->bs.onRead == drflac__on_read_stdio) {
-        fclose((FILE*)pFlac->bs.pUserData);
+        rwz::stdio::fclose((FILE*)pFlac->bs.pUserData);
     }
 
 #ifndef DR_FLAC_NO_OGG
@@ -8963,7 +8964,7 @@ DRFLAC_API void drflac_close(drflac* pFlac)
         DRFLAC_ASSERT(pFlac->bs.onRead == drflac__on_read_ogg);
 
         if (oggbs->onRead == drflac__on_read_stdio) {
-            fclose((FILE*)oggbs->pUserData);
+            rwz::stdio::fclose((FILE*)oggbs->pUserData);
         }
     }
 #endif

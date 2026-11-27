@@ -7,7 +7,6 @@
 #include <algorithm>
 #include <climits>
 #include <cstdlib>
-#include <fstream>
 #include <limits>
 #include <optional>
 #include <regex>
@@ -23,6 +22,7 @@
 #include "misc/support.h"
 #include "utils/fs_utils.h"
 #include "utils/string_utils.h"
+#include "rwzfs/rwz.h"
 
 // Commonly accessed global that holds configuration records
 ConfigPtr control = {};
@@ -1253,7 +1253,7 @@ SectionProp* get_mixer_section()
 // Only checks if config file exists and is not empty
 bool config_file_is_valid(const std_fs::path& path)
 {
-	FILE* file = fopen(path.string().c_str(), "r");
+	FILE* file = rwz::stdio::fopen(path.string().c_str(), "r");
 	if (!file) {
 		return false;
 	}
@@ -1262,15 +1262,15 @@ bool config_file_is_valid(const std_fs::path& path)
 	char buffer[BufferSize];
 	size_t bytes_read;
 	do {
-		bytes_read = fread(buffer, 1, BufferSize, file);
+		bytes_read = rwz::stdio::fread(buffer, 1, BufferSize, file);
 		for (size_t i = 0; i < bytes_read; ++i) {
 			if (!isspace(buffer[i])) {
-				fclose(file);
+				rwz::stdio::fclose(file);
 				return true;
 			}
 		}
 	} while (bytes_read == BufferSize);
 
-	fclose(file);
+	rwz::stdio::fclose(file);
 	return false;
 }
