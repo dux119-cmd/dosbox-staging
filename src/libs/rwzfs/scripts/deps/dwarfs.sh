@@ -41,8 +41,18 @@ build_dwarfs() {
     prefix_path="$DEPS_PREFIX;$DEPS_EXTERNAL_PREFIX"
     suffix_args=()
   fi
+  # libarchive is static and needs zlib at link time. dwarfs links libarchive through pkg-config's Libs only, which
+  # does not carry zlib, so the zlib library file is added to every executable's link line (the tools need it).
+  local zlib_args=()
+  local zlib_lib
+  zlib_lib=$(zlib_library_file)
+  if [[ -n "$zlib_lib" && -z "$DEPS_EXTERNAL_PREFIX" ]]; then
+    zlib_args=(-DCMAKE_EXE_LINKER_FLAGS="$zlib_lib")
+  fi
+
   cmake -S "$src" -B "$build" ${GEN[@]+"${GEN[@]}"} \
     -DCMAKE_POLICY_VERSION_MINIMUM=3.5 \
+    ${zlib_args[@]+"${zlib_args[@]}"} \
     ${msvc_args[@]+"${msvc_args[@]}"} \
     -DCMAKE_BUILD_TYPE=MinSizeRel \
     -DCMAKE_PREFIX_PATH="$prefix_path" \
