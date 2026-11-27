@@ -73,9 +73,10 @@ set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
-# Tests and examples are off by default, so a project that vendors rwzfs builds neither. Debug builds turn them on
-# (single-config generators; for multi-config generators pass -DRWZFS_BUILD_TESTS=ON / -DRWZFS_BUILD_EXAMPLES=ON).
-if(CMAKE_BUILD_TYPE STREQUAL "Debug")
+# Tests and examples are off by default, so a project that vendors rwzfs builds neither, whatever its build type.
+# Building rwzfs itself in Debug (single-config generators) turns them on. For multi-config generators, or to
+# override, pass -DRWZFS_BUILD_TESTS=ON / -DRWZFS_BUILD_EXAMPLES=ON.
+if(PROJECT_IS_TOP_LEVEL AND CMAKE_BUILD_TYPE STREQUAL "Debug")
   set(_rwz_dev_default ON)
 else()
   set(_rwz_dev_default OFF)
